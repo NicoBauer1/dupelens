@@ -21,12 +21,10 @@ the release process stay easy to follow.
 
 ## Setup
 
-You need [Node.js](https://nodejs.org/) 22 or newer (24 is used for the checks).
-There is nothing to install.
+[Node.js](https://nodejs.org/) 22 or newer (24 is used for the checks). There
+is nothing to install.
 
 ```sh
-git clone https://github.com/NicoBauer1/dupelens.git
-cd dupelens
 npm test           # unit tests (node:test)
 ```
 
@@ -51,7 +49,7 @@ Work happens on short-lived branches cut from `develop`:
 
 ## Commit messages
 
-We use [Conventional Commits](https://www.conventionalcommits.org/):
+[Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>(<optional scope>): <short summary in the imperative>
@@ -75,13 +73,13 @@ docs: explain the similarity scale
 - [ ] User-facing changes are listed under `[Unreleased]` in
       [CHANGELOG.md](CHANGELOG.md).
 - [ ] Docs are updated (README, `docs/`).
-- [ ] The pull request description says how you tested the change.
+- [ ] The pull request description lists the checks that were run.
+
+Every pull request is verified locally with `npm test` and `npm run build`.
 
 Pull requests are merged with a merge commit (no squash, no rebase) so that the
-history shows how a feature came together.
-
-Only the maintainer opens pull requests, pushes or merges (see
-[docs/BRANCHING.md](docs/BRANCHING.md)).
+history shows how a feature came together. Only the maintainer opens pull
+requests, pushes or merges (see [docs/BRANCHING.md](docs/BRANCHING.md)).
 
 ## Coding style
 
@@ -89,13 +87,12 @@ Only the maintainer opens pull requests, pushes or merges (see
   comments.
 - Two-space indentation, single quotes, semicolons, LF line endings
   (see `.editorconfig`).
-- Keep modules small and pure where possible; the analysis engine in
-  `src/engine/` must not touch the DOM so that it can run in Node and in Web
-  Workers.
+- Small, pure modules; the analysis engine in `src/engine/` does not touch the
+  DOM so that it runs in Node and in Web Workers.
 - The single-file build is produced by a small in-house bundler. Its rules
   (named imports and exports only, unique top-level names) are documented in
   [docs/architecture.md](docs/architecture.md).
 
 ## Releases
 
-Maintainers follow [docs/RELEASING.md](docs/RELEASING.md).
+See [docs/RELEASING.md](docs/RELEASING.md).

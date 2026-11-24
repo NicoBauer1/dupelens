@@ -1,0 +1,1 @@
+This is not an image. DupeLens lists it under "Skipped files".

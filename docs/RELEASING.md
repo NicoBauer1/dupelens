@@ -14,8 +14,9 @@ single file `dist/dupelens.html`, published with a GitHub Release.
    - Commit as `chore(release): vX.Y.Z` on a `chore/release-vX.Y.Z` branch and
      merge it into `develop` via pull request.
 2. **Release candidate.** Open a pull request `develop → staging` titled
-   `release: vX.Y.Z`. Once `npm test` and `npm run build` pass locally, merge
-   it and run the smoke test below against a build of `staging`.
+   `release: vX.Y.Z`. Once `npm test`, `npm run build` and `npm run smoke`
+   pass locally, merge it and run the smoke test below against a build of
+   `staging`.
 3. **Release.** Open a pull request `staging → main` titled `release: vX.Y.Z`
    and merge it.
 4. **Tag.** On `main`:
@@ -26,13 +27,15 @@ single file `dist/dupelens.html`, published with a GitHub Release.
    git push origin vX.Y.Z
    ```
 
-   The `release` workflow builds `dist/dupelens.html` and creates the GitHub
-   Release with the notes from the matching `CHANGELOG.md` section. It can also
-   be done by hand after a local `npm run build`:
+   Then publish the release, either with the `Release` workflow
+   (`.github/workflows/release.yml`, with the tag as input), which builds
+   `dist/dupelens.html` and creates the GitHub Release with the notes from the
+   matching `CHANGELOG.md` section, or locally:
 
    ```sh
+   npm test && npm run build
    node tools/changelog-section.mjs X.Y.Z > release-notes.md
-   gh release create vX.Y.Z dist/dupelens.html --title "DupeLens vX.Y.Z" --notes-file release-notes.md
+   gh release create vX.Y.Z dist/dupelens.html --verify-tag --title "DupeLens vX.Y.Z" --notes-file release-notes.md
    ```
 
 5. **Back-merge.** Open a pull request `main → develop` if `main` contains
