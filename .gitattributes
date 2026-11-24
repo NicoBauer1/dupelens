@@ -1,0 +1,10 @@
+# Normalise all text files to LF in the repository and in working trees,
+# so that the build output is byte-identical on every platform.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary

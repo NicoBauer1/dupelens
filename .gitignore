@@ -1,0 +1,19 @@
+# Build output
+/dist/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Local scratch output of tools
+/tmp/
+/.cache/
+*.log
+
+# Editors and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
