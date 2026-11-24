@@ -15,7 +15,7 @@
 
 import { findPairs } from '../src/engine/matcher.js';
 import { groupPairs } from '../src/engine/grouping.js';
-import { prepareFingerprint } from '../src/engine/similarity.js';
+import { prepareFingerprint, MIN_SCORE } from '../src/engine/similarity.js';
 import { HISTOGRAM_SIZE } from '../src/engine/histogram.js';
 import { createRandom } from './lib/synth.mjs';
 
@@ -72,8 +72,8 @@ function makeCollection(count, mode, seed = 1) {
 const sizes = process.argv.slice(2).map(Number).filter(Boolean);
 const counts = sizes.length ? sizes : [1000, 5000, 10000];
 console.log(`Node ${process.version}, ${process.platform}/${process.arch}\n`);
-console.log('| Photos | Collection | Pairs examined | Rejected by hashes | Rejected by colour | SSIM evaluated | Pairs ≥ 50 | Matching | Regroup at 90 |');
-console.log('| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
+console.log(`| Photos | Collection | Pairs examined | Rejected by hashes | Rejected by colour | Rejected by SSIM bound | Full SSIM | Pairs ≥ ${MIN_SCORE} | Matching | Regroup at 90 |`);
+console.log('| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
 for (const count of counts) {
   for (const mode of ['random', 'correlated']) {
     const items = makeCollection(count, mode, count);
@@ -84,7 +84,7 @@ for (const count of counts) {
     const t2 = performance.now();
     const pct = (v) => `${((100 * v) / stats.pairsTotal).toFixed(2)} %`;
     console.log(
-      `| ${count.toLocaleString('en')} | ${mode} | ${stats.pairsTotal.toLocaleString('en')} | ${pct(stats.hashRejected)} | ${pct(stats.colourRejected)} | ${stats.ssimEvaluated.toLocaleString('en')} | ${pairs.length.toLocaleString('en')} | ${((t1 - t0) / 1000).toFixed(2)} s | ${(t2 - t1).toFixed(1)} ms (${groups.length} groups) |`,
+      `| ${count.toLocaleString('en')} | ${mode} | ${stats.pairsTotal.toLocaleString('en')} | ${pct(stats.hashRejected)} | ${pct(stats.colourRejected)} | ${pct(stats.boundRejected)} | ${stats.ssimEvaluated.toLocaleString('en')} | ${pairs.length.toLocaleString('en')} | ${((t1 - t0) / 1000).toFixed(2)} s | ${(t2 - t1).toFixed(1)} ms (${groups.length} groups) |`,
     );
   }
 }

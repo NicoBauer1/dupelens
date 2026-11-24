@@ -4,16 +4,19 @@
 // similarity.js). The three hash penalties are therefore a lower bound of the
 // total penalty: if they alone push the score below `minScore`, the pair stays
 // below the threshold, and the more expensive colour and SSIM terms are
-// not evaluated. The colour term (64 bins) is checked next, SSIM last. No pair
-// that scores at least `minScore` is ever skipped.
+// not evaluated. The DCT hash is checked first (it alone can exceed the
+// budget), then the other two hashes, the colour term (64 bins), an upper
+// bound of SSIM from per-window means and variances, and only then the full
+// SSIM. Every stage is a true lower bound of the penalty, so no pair that
+// scores at least `minScore` is ever skipped.
 //
 // All pairs scoring ≥ `minScore` are kept, so that the threshold slider can be
 // moved anywhere above `minScore` without matching again.
 
-import { SCORE_WEIGHTS, MIN_SCORE, hashDissimilarity, colourPenalty, combineScore } from './similarity.js';
+import { SCORE_WEIGHTS, MIN_SCORE, hashDissimilarity, colourPenalty, structurePenalty, combineScore } from './similarity.js';
 import { popcount32 } from './bits.js';
 import { histogramIntersection } from './histogram.js';
-import { ssim } from './ssim.js';
+import { ssim, ssimUpperBound } from './ssim.js';
 
 /**
  * @typedef {object} MatchItem
@@ -46,10 +49,12 @@ export class PairMatcher {
   constructor(items, options = {}) {
     this.items = items;
     this.minScore = options.minScore ?? MIN_SCORE;
-    this.budget = 1 - this.minScore / 100;
+    // Scores are rounded to one decimal, so a pair whose exact score is just
+    // below minScore (by less than 0.05) still counts; the budget allows for it.
+    this.budget = 1 - (this.minScore - 0.05) / 100 + 1e-12;
     /** @type {Pair[]} */
     this.pairs = [];
-    this.stats = { pairsTotal: 0, hashRejected: 0, colourRejected: 0, ssimEvaluated: 0, exactPairs: 0 };
+    this.stats = { pairsTotal: 0, hashRejected: 0, colourRejected: 0, boundRejected: 0, ssimEvaluated: 0, exactPairs: 0 };
 
     // Byte-identical files: chain every group of equal hashes with score 100.
     const bySha = new Map();
@@ -123,8 +128,13 @@ export class PairMatcher {
         const fa = itemI.fingerprint;
         const fb = itemJ.fingerprint;
         const colour = histogramIntersection(fa.histogram, fb.histogram);
-        if (penalty + colourPenalty(colour) > budget) {
+        const partial = penalty + colourPenalty(colour);
+        if (partial > budget) {
           this.stats.colourRejected++;
+          continue;
+        }
+        if (partial + structurePenalty(ssimUpperBound(fa.ssimStats, fb.ssimStats)) > budget) {
+          this.stats.boundRejected++;
           continue;
         }
         this.stats.ssimEvaluated++;

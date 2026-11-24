@@ -1,3 +1,5 @@
+Pull requests in this repository are opened by the maintainer only.
+
 ## Summary
 
 <!-- What does this pull request change and why? -->
@@ -8,7 +10,7 @@
 
 ## How tested
 
-<!-- Commands you ran and their results, browsers you tried, sample sets you used. -->
+<!-- Checks (run locally) with their results, browsers tried, sample sets used. -->
 
 - [ ] `npm test`
 - [ ] `npm run build`

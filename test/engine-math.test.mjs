@@ -5,7 +5,7 @@ import { dct2d, idct2d } from '../src/engine/dct.js';
 import { resizeArea, areaWeights, fitWithin, rgbaToRgbOverWhite, rgbToGray } from '../src/engine/raster.js';
 import { averageHash, differenceHash, dctHash, blockMean8 } from '../src/engine/hashes.js';
 import { colourHistogram, histogramIntersection, HISTOGRAM_SIZE } from '../src/engine/histogram.js';
-import { prepareSsim, ssim } from '../src/engine/ssim.js';
+import { prepareSsim, ssim, ssimReference } from '../src/engine/ssim.js';
 import { laplacianVariance } from '../src/engine/sharpness.js';
 import { createRandom } from '../tools/lib/synth.mjs';
 
@@ -161,6 +161,15 @@ test('SSIM is 1 for identical images and drops with distortion', () => {
   const sUnrelated = ssim(pa, prepareSsim(unrelated));
   assert.ok(sNoisy < 1 && sNoisy > sUnrelated, `${sNoisy} > ${sUnrelated}`);
   assert.ok(sUnrelated < 0.2);
+});
+
+test('block-based SSIM equals the window-by-window definition', () => {
+  const random = createRandom(31);
+  for (let k = 0; k < 20; k++) {
+    const a = Float32Array.from({ length: 1024 }, () => random() * 255);
+    const b = a.map((v, i) => (k % 2 ? v * 0.8 + 20 : random() * 255) + (i % 7));
+    close(ssim(prepareSsim(a), prepareSsim(b)), ssimReference(a, b), 1e-9);
+  }
 });
 
 test('the Laplacian variance is higher for sharper images', () => {

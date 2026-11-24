@@ -64,7 +64,7 @@ test('the pruning bound keeps every pair the exhaustive comparison keeps', () =>
       }
     }
     assert.equal(pairs.length, expected);
-    assert.ok(stats.hashRejected + stats.colourRejected + stats.ssimEvaluated === stats.pairsTotal);
+    assert.equal(stats.hashRejected + stats.colourRejected + stats.boundRejected + stats.ssimEvaluated, stats.pairsTotal);
   }
 });
 
