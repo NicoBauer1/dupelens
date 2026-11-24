@@ -50,5 +50,6 @@ test('handles CRLF line endings', () => {
 test('the real CHANGELOG.md has an Unreleased section', async () => {
   const text = await readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8');
   const section = changelogSection(text, 'Unreleased');
-  assert.ok(section && section.includes('###'), 'Unreleased section with at least one heading');
+  // Right after a release the section is empty (see docs/RELEASING.md), so only its presence is required.
+  assert.notEqual(section, null, 'CHANGELOG.md has an [Unreleased] section');
 });

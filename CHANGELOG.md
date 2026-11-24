@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-24
+
 ### Added
 
 - Browser app (`index.html` + ES modules): load photos with the file picker,
@@ -56,4 +58,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   policy, branching and release documentation, a pull request template, CI
   workflow and decision records.
 
-[Unreleased]: https://github.com/NicoBauer1/dupelens/commits/develop
+[Unreleased]: https://github.com/NicoBauer1/dupelens/compare/v0.1.0...develop
+[0.1.0]: https://github.com/NicoBauer1/dupelens/releases/tag/v0.1.0
