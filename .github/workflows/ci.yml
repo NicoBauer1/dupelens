@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Verify there are no dependencies
+        run: node -e "const p=require('./package.json'); const n=Object.keys({...p.dependencies,...p.devDependencies,...p.optionalDependencies,...p.peerDependencies}).length; if(n){console.error('Found '+n+' dependencies'); process.exit(1)}"
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build the single file
+        run: npm run build
+
+      - name: Check that the build is reproducible
+        run: |
+          node tools/build.mjs --out "$RUNNER_TEMP/second"
+          cmp dist/dupelens.html "$RUNNER_TEMP/second/dupelens.html"
+          sha256sum dist/dupelens.html
+
+      - name: Browser smoke test (headless Chrome)
+        run: npm run smoke

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" width="960" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">How DupeLens works</title>
+  <desc id="desc">Files are read and fingerprinted in a worker pool, compared pairwise with an exact pruning bound, grouped at the chosen threshold, reviewed by the user and exported as reports and move scripts. The analysis runs in the browser; the page's Content-Security-Policy is set to block network connections.</desc>
+  <style>
+    .box { fill: #ffffff; stroke: #c3cad4; stroke-width: 1.5; }
+    .accent { fill: #eaf0fc; stroke: #3b6fd8; }
+    .green { fill: #e6f6ef; stroke: #11a37f; }
+    .title { font: 600 15px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #1b1f24; }
+    .text { font: 12.5px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #3a424c; }
+    .small { font: 12px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #59616b; }
+    .arrow { stroke: #8a94a3; stroke-width: 2; fill: none; marker-end: url(#head); }
+    .frame { fill: none; stroke: #8a94a3; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .label { font: 600 12.5px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #59616b; }
+    @media (prefers-color-scheme: dark) {
+      .box { fill: #1a1f25; stroke: #4a5562; }
+      .accent { fill: #1f2d48; stroke: #7ea6ff; }
+      .green { fill: #173528; stroke: #5fd3a2; }
+      .title { fill: #e8ebef; }
+      .text { fill: #c5ccd5; }
+      .small, .label { fill: #a2abb6; }
+    }
+  </style>
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8a94a3"/>
+    </marker>
+  </defs>
+
+  <rect class="frame" x="8" y="8" width="944" height="344" rx="14"/>
+  <text class="label" x="24" y="32">Your browser — the Content-Security-Policy (connect-src 'none') is set to block network connections</text>
+
+  <!-- 1 Load -->
+  <rect class="box" x="24" y="56" width="200" height="120" rx="10"/>
+  <text class="title" x="40" y="82">1 · Load</text>
+  <text class="text" x="40" y="106">File picker</text>
+  <text class="text" x="40" y="126">Folder picker</text>
+  <text class="text" x="40" y="146">Drag &amp; drop (folders too)</text>
+  <text class="small" x="40" y="166">relative paths are kept</text>
+
+  <!-- 2 Analyse -->
+  <rect class="box accent" x="264" y="56" width="300" height="120" rx="10"/>
+  <text class="title" x="280" y="82">2 · Analyse (worker pool)</text>
+  <text class="text" x="280" y="106">SHA-256 of the bytes (Web Crypto)</text>
+  <text class="text" x="280" y="126">createImageBitmap → ≤ 256 px, EXIF orientation</text>
+  <text class="text" x="280" y="146">DCT · difference · average hash, histogram,</text>
+  <text class="text" x="280" y="166">32 × 32 SSIM thumbnail, sharpness</text>
+
+  <!-- 3 Match -->
+  <rect class="box accent" x="604" y="56" width="332" height="120" rx="10"/>
+  <text class="title" x="620" y="82">3 · Match all pairs</text>
+  <text class="text" x="620" y="106">Hamming distances → upper bound of the score</text>
+  <text class="text" x="620" y="126">→ colour → SSIM bound → full SSIM</text>
+  <text class="text" x="620" y="146">score 0–100 %, cached for every pair ≥ 70 %</text>
+  <text class="small" x="620" y="166">no pair above the threshold is ever skipped</text>
+
+  <!-- 4 Group -->
+  <rect class="box" x="604" y="212" width="332" height="120" rx="10"/>
+  <text class="title" x="620" y="238">4 · Group at the threshold</text>
+  <text class="text" x="620" y="262">Slider 70–100 %, presets Exact / Near-identical /</text>
+  <text class="text" x="620" y="282">Default / Similar shots — regroups instantly</text>
+  <text class="text" x="620" y="302">(union-find over the cached pairs)</text>
+
+  <!-- 5 Review -->
+  <rect class="box green" x="264" y="212" width="300" height="120" rx="10"/>
+  <text class="title" x="280" y="238">5 · Review: which one to keep?</text>
+  <text class="text" x="280" y="262">Suggested keeper: resolution → size →</text>
+  <text class="text" x="280" y="282">sharpness → age; Keep / Remove per photo</text>
+  <text class="text" x="280" y="302">Compare: side by side, slider, flicker, difference</text>
+
+  <!-- 6 Export -->
+  <rect class="box" x="24" y="212" width="200" height="120" rx="10"/>
+  <text class="title" x="40" y="238">6 · Export</text>
+  <text class="text" x="40" y="262">Decisions as JSON / CSV</text>
+  <text class="text" x="40" y="282">Move scripts (PowerShell, sh)</text>
+  <text class="small" x="40" y="302">dry run by default, moves into</text>
+  <text class="small" x="40" y="320">_dupelens_review/, no deleting</text>
+
+  <path class="arrow" d="M224 116H258"/>
+  <path class="arrow" d="M564 116H598"/>
+  <path class="arrow" d="M770 176V206"/>
+  <path class="arrow" d="M604 272H570"/>
+  <path class="arrow" d="M264 272H230"/>
+</svg>
