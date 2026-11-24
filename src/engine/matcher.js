@@ -166,14 +166,24 @@ export function findPairs(items, options = {}) {
 }
 
 /**
- * Same as {@link findPairs} but yields to the event loop between chunks.
+ * Same as {@link findPairs} but yields to the event loop about every
+ * `sliceMs` milliseconds, so a page stays responsive while matching.
  * @param {MatchItem[]} items
- * @param {{ minScore?: number, onProgress?: (fraction: number) => void, chunk?: number }} [options]
+ * @param {{ minScore?: number, onProgress?: (fraction: number) => void, chunk?: number, sliceMs?: number }} [options]
+ *   `chunk`: pairs examined between two clock checks
  */
 export async function findPairsAsync(items, options = {}) {
   const matcher = new PairMatcher(items, options);
-  const chunk = options.chunk ?? 400_000;
-  while (!matcher.step(chunk)) {
+  const chunk = options.chunk ?? 50_000;
+  const sliceMs = options.sliceMs ?? 40;
+  const now = () => (globalThis.performance ? performance.now() : Date.now());
+  for (;;) {
+    const started = now();
+    let finished = false;
+    while (!(finished = matcher.step(chunk)) && now() - started < sliceMs) {
+      // keep working within this time slice
+    }
+    if (finished) break;
     if (options.onProgress) options.onProgress(matcher.progress);
     await new Promise((resolve) => setTimeout(resolve, 0));
   }

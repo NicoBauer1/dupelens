@@ -32,3 +32,7 @@ hotfix/*  ───────────────────────�
 7. Merged work branches may be deleted; `develop`, `staging` and `main` are
    permanent (release PRs use `develop` and `staging` as head branches).
 
+## Who can change the branches
+
+DupeLens has a single maintainer. Only the maintainer opens pull requests,
+pushes or merges.

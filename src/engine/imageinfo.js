@@ -192,7 +192,7 @@ export function readImageInfo(bytes, name = '', mimeType = '') {
     if (format === 'avif' || format === 'heif') ({ width, height } = ispeInfo(bytes));
   } else if (bytes.length >= 4 && (at(0, 0x49, 0x49, 0x2a, 0x00) || at(0, 0x4d, 0x4d, 0x00, 0x2a))) {
     format = 'tiff';
-  } else if (/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(ascii(bytes, 0, Math.min(bytes.length, 512)))) {
+  } else if (/^\s*(<\?xml[^>]*>\s*)?(<!-{2}[\s\S]*?-{2}>\s*)*<svg[\s>]/i.test(ascii(bytes, 0, Math.min(bytes.length, 512)))) {
     format = 'svg';
   }
 
