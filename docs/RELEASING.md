@@ -43,7 +43,19 @@ single file `dist/dupelens.html`, published with a GitHub Release.
 
 ## Smoke test
 
-Run in at least one Chromium-based browser and Firefox; Safari if available.
+Automated part — headless Chrome or Edge with a throw-away profile and only
+the synthetic files from `examples/`:
+
+```sh
+npm run build
+npm run smoke                     # dist/dupelens.html from file://, with workers
+npm run smoke -- --no-workers     # the same with the main-thread fallback
+npm run serve                     # local development server, in a second terminal
+npm run smoke -- --url <address shown by npm run serve>
+```
+
+Manual part — run in at least one Chromium-based browser and Firefox; Safari
+if available:
 
 - [ ] `dist/dupelens.html` opens by double-click (`file://`) without console
       errors and shows the version in the footer.

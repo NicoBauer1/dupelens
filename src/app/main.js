@@ -641,7 +641,10 @@ function onKeyDown(event) {
   }
   if (!state.session || ui.reviewView.hidden || isTypingTarget(event.target)) return;
   const onRange = event.target instanceof HTMLInputElement && event.target.type === 'range';
-  const key = event.key;
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  // Shortcuts act on the group that contains the keyboard focus, if any.
+  const focusedCard = event.target instanceof Element ? event.target.closest('.group') : null;
+  if (focusedCard) state.current = Number(focusedCard.getAttribute('data-group'));
   const g = state.current;
   const has = g >= 0 && g < state.session.groups.length;
   if (key === 'j' || (key === 'ArrowDown' && !onRange)) focusGroup(g + 1);

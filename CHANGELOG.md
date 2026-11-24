@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   existing targets, with literal quoting of hostile file names.
 - Zero-dependency development server (`npm run serve`) with the app's
   Content-Security-Policy.
+- Single-file build (`npm run build`): `dist/dupelens.html` with inlined
+  script and style, the worker started from a Blob URL, a
+  Content-Security-Policy pinned to SHA-256 hashes, and byte-identical output
+  on every machine; works by double-click from `file://`.
+- Headless browser smoke test (`npm run smoke`) over the DevTools protocol,
+  without dependencies: loads `examples/`, checks groups, presets, keyboard
+  shortcuts, compare modes and exports, and runs the downloaded move scripts
+  on a temporary copy.
+- README, architecture documentation with benchmark numbers, and a pipeline
+  diagram.
 - Analysis engine without dependencies: SHA-256 (Web Crypto with a built-in
   fallback), average hash, difference hash, DCT hash (own 2D DCT-II),
   soft-binned colour histogram with histogram intersection, SSIM on a 32 × 32

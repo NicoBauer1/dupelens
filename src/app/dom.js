@@ -59,7 +59,7 @@ export function isTypingTarget(target) {
   if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
   if (tag === 'INPUT') {
     const type = /** @type {HTMLInputElement} */ (target).type;
-    return !['button', 'checkbox', 'radio', 'file'].includes(type);
+    return !['button', 'checkbox', 'radio', 'file', 'range'].includes(type);
   }
   return false;
 }

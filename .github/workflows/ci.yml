@@ -29,3 +29,15 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+      - name: Build the single file
+        run: npm run build
+
+      - name: Check that the build is reproducible
+        run: |
+          node tools/build.mjs --out "$RUNNER_TEMP/second"
+          cmp dist/dupelens.html "$RUNNER_TEMP/second/dupelens.html"
+          sha256sum dist/dupelens.html
+
+      - name: Browser smoke test (headless Chrome)
+        run: npm run smoke

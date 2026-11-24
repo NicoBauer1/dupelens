@@ -15,6 +15,7 @@ import {
   powerShellScript,
   shellScript,
   describeRunLocation,
+  sanitizeComment,
   DEFAULT_REVIEW_FOLDER,
 } from '../src/export/scripts.js';
 
@@ -88,6 +89,23 @@ test('run location advice', () => {
   assert.equal(describeRunLocation(['Photos/a.jpg']).folder, 'Photos');
   assert.equal(describeRunLocation(['a.jpg', 'b.jpg']).kind, 'loose-files');
   assert.equal(describeRunLocation(['A/a.jpg', 'B/b.jpg']).kind, 'mixed');
+});
+
+/** Folder names that would break out of a comment in the script header. */
+const HOSTILE_FOLDERS = ['x#> Write-Output INJECTED <#y', 'x\necho INJECTED\n#', 'x\r\nWrite-Output INJECTED'];
+
+test('folder names in the header stay inside the comment', () => {
+  assert.equal(sanitizeComment('a#>b<#c\nd\re\u2028f'), 'a#?b?#c?d?e?f');
+  for (const folder of HOSTILE_FOLDERS) {
+    const runLocation = describeRunLocation([`${folder}/a.jpg`]).text;
+    const ps = powerShellScript([`${folder}/a.jpg`], { runLocation });
+    const sh = shellScript([`${folder}/a.jpg`], { runLocation });
+    const psHeader = ps.slice(0, ps.indexOf('#>') + 2);
+    assert.ok(psHeader.endsWith('\r\n#>'), 'the first "#>" is the real end of the comment block');
+    assert.ok(ps.includes(quotePowerShell(`${folder}/a.jpg`)), 'the path itself is a quoted literal');
+    const shHeader = sh.slice(0, sh.indexOf('\nset -u'));
+    for (const line of shHeader.split('\n').filter(Boolean)) assert.ok(line.startsWith('#'), `header line is a comment: ${JSON.stringify(line)}`);
+  }
 });
 
 async function exists(file) {
