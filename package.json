@@ -1,0 +1,18 @@
+{
+  "name": "dupelens",
+  "version": "0.1.0",
+  "description": "Offline, browser-based duplicate and near-duplicate photo finder with an adjustable similarity threshold.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NicoBauer1/dupelens.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  }
+}
