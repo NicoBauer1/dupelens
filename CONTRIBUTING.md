@@ -77,6 +77,8 @@ docs: explain the similarity scale
 - [ ] Docs are updated (README, `docs/`).
 - [ ] The pull request description says how you tested the change.
 
+Every pull request is verified locally with `npm test` and `npm run build`.
+
 Pull requests are merged with a merge commit (no squash, no rebase) so that the
 history shows how a feature came together.
 
