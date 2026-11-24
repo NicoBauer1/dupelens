@@ -91,9 +91,24 @@ function header(paths, options, commentPrefix) {
     'before running it and keep a backup of your photos.',
     '',
     'Where to run it: the paths below are relative.',
-    ...(options.runLocation ? wrap(options.runLocation, 74) : []),
+    ...(options.runLocation ? wrap(sanitizeComment(options.runLocation), 74) : []),
   ];
-  return lines.map((l) => (l ? `${commentPrefix} ${l}` : commentPrefix.trimEnd()));
+  return lines.map((l) => (l ? `${commentPrefix} ${sanitizeComment(l)}` : commentPrefix.trimEnd()));
+}
+
+/**
+ * Makes text usable inside a script comment. The run-location advice contains a
+ * folder name chosen by whoever named the folder: a line break would end an sh
+ * comment, and "#>" would end a PowerShell comment block, so both could turn
+ * the rest of the text into commands.
+ * @param {string} text
+ * @returns {string}
+ */
+export function sanitizeComment(text) {
+  return String(text)
+    .replace(/[\u0000-\u001f\u007f\u0085\u2028\u2029]/g, '?')
+    .replace(/#>/g, '#?')
+    .replace(/<#/g, '?#');
 }
 
 function wrap(text, width) {

@@ -14,7 +14,9 @@
   },
   "scripts": {
     "test": "node --test \"test/*.test.mjs\"",
+    "build": "node tools/build.mjs",
     "serve": "node tools/serve.mjs",
+    "smoke": "node tools/smoke-browser.mjs",
     "samples": "node tools/make-samples.mjs",
     "calibrate": "node tools/calibrate.mjs",
     "bench": "node tools/bench.mjs"

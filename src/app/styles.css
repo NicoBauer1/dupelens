@@ -834,6 +834,7 @@ progress {
 
 .compare-stage.single {
   grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 
 .compare-pane {
