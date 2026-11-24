@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Browser app (`index.html` + ES modules): load photos with the file picker,
+  the folder picker or drag and drop (including folders); local analysis in a
+  Web Worker pool sized from `navigator.hardwareConcurrency`, with a
+  main-thread fallback; progress with time estimate and cancel.
+- Review flow: threshold slider (70–100 %) with the presets Exact,
+  Near-identical, Default and Similar shots, instant regrouping, group cards
+  with thumbnails and facts, suggested keeper with reason, Keep/Remove per
+  photo, "Not duplicates — keep all", undo, live summary, lazy rendering,
+  sort orders, skipped files with reasons.
+- Compare view with side by side, slider, flicker and pixel difference modes.
+- Keyboard shortcuts (J/K, 1–9, A, N, U, C, T, E, ?), light and dark theme,
+  accessible labels and focus states, own inline SVG icons.
+- Exports: decisions as JSON and CSV (cells that would start a formula are prefixed), move scripts for
+  PowerShell and POSIX sh that move files marked "remove" into
+  `_dupelens_review/` — dry run by default, without delete commands, skipping
+  existing targets, with literal quoting of hostile file names.
+- Zero-dependency development server (`npm run serve`) with the app's
+  Content-Security-Policy.
 - Analysis engine without dependencies: SHA-256 (Web Crypto with a built-in
   fallback), average hash, difference hash, DCT hash (own 2D DCT-II),
   soft-binned colour histogram with histogram intersection, SSIM on a 32 × 32

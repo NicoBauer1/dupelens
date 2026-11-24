@@ -59,7 +59,8 @@ const ssimScratch = new Float64Array(SSIM_BLOCKS * SSIM_BLOCKS);
  * @returns {{ pixels: Float32Array, mean: Float64Array, variance: Float64Array }}
  */
 export function prepareSsim(gray32) {
-  const pixels = Float32Array.from(gray32);
+  // The fingerprint's thumbnail is used as is (no copy) when it already is a Float32Array.
+  const pixels = gray32 instanceof Float32Array ? gray32 : Float32Array.from(gray32);
   const ones = new Float32Array(SSIM_SIZE * SSIM_SIZE).fill(1);
   const sums = new Float64Array(SSIM_BLOCKS * SSIM_BLOCKS);
   const squares = new Float64Array(SSIM_BLOCKS * SSIM_BLOCKS);
