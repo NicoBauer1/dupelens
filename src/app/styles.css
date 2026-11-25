@@ -7,6 +7,7 @@
   --text: #1b1f24;
   --muted: #59616b;
   --border: #d4d9e0;
+  --control-border: #7d8693;
   --accent: #2f5fc4;
   --accent-text: #ffffff;
   --accent-soft: #e3ebfb;
@@ -32,6 +33,7 @@
     --text: #e8ebef;
     --muted: #a2abb6;
     --border: #36404b;
+    --control-border: #7a8696;
     --accent: #7ea6ff;
     --accent-text: #0d1420;
     --accent-soft: #1f2d48;
@@ -54,6 +56,7 @@
   --text: #e8ebef;
   --muted: #a2abb6;
   --border: #36404b;
+  --control-border: #7a8696;
   --accent: #7ea6ff;
   --accent-text: #0d1420;
   --accent-soft: #1f2d48;
@@ -227,7 +230,7 @@ a {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -295,7 +298,7 @@ select {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 6px 8px;
   min-height: 40px;
@@ -586,7 +589,6 @@ progress {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  scroll-margin-top: 180px;
 }
 
 .group:focus-visible,
@@ -1093,6 +1095,21 @@ progress {
   .compare-stage,
   .compare-controls {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Windows high contrast and other forced colours: keep states visible. */
+@media (forced-colors: active) {
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'],
+  .decision .button[aria-pressed='true'],
+  .step[aria-current='step'] .step-number {
+    outline: 2px solid CanvasText;
+    outline-offset: 1px;
+  }
+
+  .tile.remove {
+    border-style: dashed;
   }
 }
 

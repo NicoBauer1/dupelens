@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keep a backup of your photos.
 - The synthetic image generator moved from `tools/lib/synth.mjs` to
   `src/samples/synth.js`, next to the demo set in `src/samples/demo-set.js`.
+- Accessibility: a logical keyboard order with a visible focus indicator on
+  every step; keep, remove and group buttons name the photo or group they act
+  on; the compare modes are toggle buttons; regrouping, sorting and the start
+  of an analysis are announced to screen readers; the sticky toolbar no longer
+  covers the focused element; control borders and all text meet WCAG 2.2 AA
+  contrast in the light and the dark theme (checked by a unit test); states
+  stay visible in forced-colours mode.
 
 ## [0.1.0] - 2026-11-24
 
