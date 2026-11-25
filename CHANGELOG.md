@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-25
+
 ### Added
 
 - **Try with sample photos** on the start screen: DupeLens draws the synthetic
   demo set in the browser (the same pictures as in `examples/`) and analyses
   it, so the app can be tried without choosing own photos.
+- README with screenshots, a usage guide for the three steps, a threshold
+  guide, keyboard shortcuts, exports, known limitations and a disclaimer.
+- `npm run screenshots` (`tools/screenshots.mjs`) takes the README screenshots
+  in `docs/images/` from the sample photos in a headless browser and keeps only
+  the image data of the PNG files; the smoke test and the screenshot tool share
+  `tools/lib/browser.mjs`.
 
 ### Changed
 
@@ -85,5 +93,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   policy, branching and release documentation, a pull request template, CI
   workflow and decision records.
 
-[Unreleased]: https://github.com/NicoBauer1/dupelens/compare/v0.1.0...develop
+[Unreleased]: https://github.com/NicoBauer1/dupelens/compare/v1.0.0...develop
+[1.0.0]: https://github.com/NicoBauer1/dupelens/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/NicoBauer1/dupelens/releases/tag/v0.1.0

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { sha256Fallback, sha256Hex, bytesToHex } from '../src/engine/sha256.js';
-import { encodePng, decodePng, crc32 } from '../tools/lib/png.mjs';
+import { encodePng, decodePng, crc32, pngChunkTypes, stripPngMetadata } from '../tools/lib/png.mjs';
 import { renderScene, createRandom } from '../src/samples/synth.js';
 
 const text = (s) => new TextEncoder().encode(s);
@@ -55,6 +55,18 @@ test('PNG decoder rejects corrupted files', () => {
   broken[20] ^= 0xff; // inside IHDR
   assert.throws(() => decodePng(broken), /bad CRC/);
   assert.throws(() => decodePng(text('not a png at all')), /not a PNG/);
+});
+
+test('PNG metadata chunks are removed and the pixels stay the same', () => {
+  const image = renderScene('abstract', 9, 24, 16);
+  const png = encodePng(image);
+  const iend = png.length - 12;
+  const textChunk = new Uint8Array([0, 0, 0, 4, 0x74, 0x45, 0x58, 0x74, 0x61, 0x3d, 0x62, 0x63, 0, 0, 0, 0]);
+  const withText = new Uint8Array([...png.subarray(0, iend), ...textChunk, ...png.subarray(iend)]);
+  assert.deepEqual(pngChunkTypes(withText), ['IHDR', 'IDAT', 'tEXt', 'IEND']);
+  const stripped = stripPngMetadata(withText);
+  assert.deepEqual(pngChunkTypes(stripped), ['IHDR', 'IDAT', 'IEND']);
+  assert.deepEqual(stripped, png);
 });
 
 test('PNG encoding is deterministic', () => {

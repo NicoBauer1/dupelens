@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Automated smoke test of the single-file build in a headless Chromium-based
-// browser (Chrome, Edge or Chromium), driven over the DevTools protocol with
-// Node's built-in WebSocket — no dependencies, a throw-away browser profile,
-// only the synthetic files from examples/.
+// browser (Chrome, Edge or Chromium), driven over the DevTools protocol
+// (tools/lib/browser.mjs) — no dependencies, a throw-away browser profile,
+// only synthetic photos (the sample photos and examples/).
 //
 //   npm run build && node tools/smoke-browser.mjs
 //   node tools/smoke-browser.mjs --url <address>                # local development server
@@ -22,127 +22,33 @@
 // only, the focus is visible, every control has an accessible name and
 // regrouping is announced.
 
-import { spawn, execFile } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile, access, cp } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, readFile, readdir, writeFile, access, cp } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { launchBrowser, waitFor } from './lib/browser.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const run = promisify(execFile);
 const args = process.argv.slice(2);
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 
-const CANDIDATES = {
-  win32: [
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  ],
-  darwin: [
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-    '/Applications/Chromium.app/Contents/MacOS/Chromium',
-  ],
-  linux: ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge'],
-};
-
-async function findBrowser() {
-  if (process.env.BROWSER) return process.env.BROWSER;
-  for (const candidate of CANDIDATES[process.platform] || []) {
-    try {
-      await access(candidate);
-      return candidate;
-    } catch {
-      // try the next one
-    }
-  }
-  throw new Error('No Chromium-based browser found; set BROWSER=/path/to/browser');
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function waitFor(check, timeout, what) {
-  const end = Date.now() + timeout;
-  while (Date.now() < end) {
-    const value = await check();
-    if (value) return value;
-    await sleep(200);
-  }
-  throw new Error(`timed out waiting for ${what}`);
-}
-
-class Session {
-  constructor(socket) {
-    this.socket = socket;
-    this.nextId = 1;
-    this.pending = new Map();
-    this.listeners = [];
-    socket.addEventListener('message', (event) => {
-      const message = JSON.parse(event.data);
-      if (message.id && this.pending.has(message.id)) {
-        const { resolve, reject } = this.pending.get(message.id);
-        this.pending.delete(message.id);
-        if (message.error) reject(new Error(`${message.error.message} (${message.error.code})`));
-        else resolve(message.result);
-      } else if (message.method) {
-        for (const listener of this.listeners) listener(message);
-      }
-    });
-  }
-
-  send(method, params = {}, sessionId) {
-    const id = this.nextId++;
-    this.socket.send(JSON.stringify({ id, method, params, sessionId }));
-    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }));
-  }
-}
-
 async function main() {
-  const browserPath = await findBrowser();
   const base = option('--url') || pathToFileURL(path.join(ROOT, 'dist', 'dupelens.html')).href;
   const target = args.includes('--no-workers') ? `${base}${base.includes('?') ? '&' : '?'}workers=0` : base;
-  const profile = await mkdtemp(path.join(tmpdir(), 'dupelens-smoke-'));
-  const browser = spawn(browserPath, [
-    '--headless=new',
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--disable-extensions',
-    '--disable-background-networking',
-    '--disable-sync',
-    `--user-data-dir=${profile}`,
-    '--remote-debugging-port=0',
-    '--window-size=1400,1000',
-    // CI containers often lack the user namespaces Chrome's sandbox needs.
-    ...(process.env.CI ? ['--no-sandbox'] : []),
-    'about:blank',
-  ], { stdio: 'ignore' });
   const results = [];
   const check = (ok, label, detail = '') => {
     results.push({ ok, label, detail });
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}${detail ? ` — ${detail}` : ''}`);
   };
 
+  const page = await launchBrowser({ width: 1400, height: 1000 });
+  const { send, evaluate, profile } = page;
   try {
-    const portFile = path.join(profile, 'DevToolsActivePort');
-    const portText = await waitFor(() => readFile(portFile, 'utf8').catch(() => ''), 20000, 'the browser to start');
-    const [port, wsPath] = portText.trim().split('\n');
-    const socket = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
-    await new Promise((resolve, reject) => {
-      socket.addEventListener('open', resolve, { once: true });
-      socket.addEventListener('error', reject, { once: true });
-    });
-    const cdp = new Session(socket);
-    const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
-    const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
-    const send = (method, params) => cdp.send(method, params, sessionId);
-
     const problems = [];
     const requests = [];
-    cdp.listeners.push((message) => {
-      if (message.sessionId !== sessionId) return;
+    page.onEvent((message) => {
       if (message.method === 'Runtime.exceptionThrown') problems.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
       if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') problems.push(message.params.args.map((a) => a.value ?? a.description).join(' '));
       if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') problems.push(message.params.entry.text);
@@ -160,12 +66,6 @@ async function main() {
       const { data } = await send('Page.captureScreenshot', { format: 'png' });
       await writeFile(file, Buffer.from(data, 'base64'));
       console.log(`     screenshot written to ${file}`);
-    };
-
-    const evaluate = async (expression) => {
-      const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-      if (exceptionDetails) throw new Error(exceptionDetails.exception?.description || exceptionDetails.text);
-      return result.value;
     };
 
     await send('Page.navigate', { url: target });
@@ -327,7 +227,7 @@ async function main() {
     // Downloads: all four exports, then run the sh script on a copy of examples/.
     const downloads = path.join(profile, 'downloads');
     await mkdir(downloads, { recursive: true });
-    await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+    await page.sendBrowser('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
     const expectedRemovals = await evaluate(`(async () => {
       document.getElementById('export-button').click();
       for (const button of document.querySelectorAll('#export-body button')) {
@@ -395,11 +295,8 @@ async function main() {
     const external = requests.filter((url) => !/^(data|blob|file|about|chrome|devtools):/.test(url) && !(option('--url') && url.startsWith(option('--url'))));
     check(external.length === 0, 'no network requests', external.join(', '));
     check(problems.length === 0, 'no console errors or exceptions', problems.join(' | '));
-    socket.close();
   } finally {
-    browser.kill();
-    await sleep(500);
-    await rm(profile, { recursive: true, force: true }).catch(() => {});
+    await page.close();
   }
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} checks passed`);

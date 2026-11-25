@@ -28,7 +28,7 @@ is nothing to install.
 npm test           # unit tests (node:test)
 ```
 
-Further scripts are described in the [README](README.md#testing).
+Further scripts are described in the [README](README.md#development-and-testing).
 
 ## Branches
 
