@@ -1,6 +1,6 @@
 {
   "name": "dupelens",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Offline, browser-based duplicate and near-duplicate photo finder with an adjustable similarity threshold.",
   "private": true,
   "type": "module",
@@ -19,6 +19,7 @@
     "smoke": "node tools/smoke-browser.mjs",
     "samples": "node tools/make-samples.mjs",
     "calibrate": "node tools/calibrate.mjs",
-    "bench": "node tools/bench.mjs"
+    "bench": "node tools/bench.mjs",
+    "screenshots": "node tools/screenshots.mjs"
   }
 }

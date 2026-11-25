@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ReviewSession } from '../src/app/review.js';
 import { findPairs } from '../src/engine/matcher.js';
 import { analyse } from '../tools/lib/calibration.mjs';
-import * as synth from '../tools/lib/synth.mjs';
+import * as synth from '../src/samples/synth.js';
 
 const big = synth.renderScene('seascape', 77, 320, 240);
 const other = synth.renderScene('stillLife', 78, 320, 240);

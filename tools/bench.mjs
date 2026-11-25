@@ -17,7 +17,7 @@ import { findPairs } from '../src/engine/matcher.js';
 import { groupPairs } from '../src/engine/grouping.js';
 import { prepareFingerprint, MIN_SCORE } from '../src/engine/similarity.js';
 import { HISTOGRAM_SIZE } from '../src/engine/histogram.js';
-import { createRandom } from './lib/synth.mjs';
+import { createRandom } from '../src/samples/synth.js';
 
 function makeCollection(count, mode, seed = 1) {
   const random = createRandom(seed);

@@ -4,8 +4,8 @@
 // and the unit tests are fully reproducible and contain no real photographs.
 // Images use the RGBA layout of ImageData: { width, height, data }.
 
-import { dct2d, idct2d } from '../../src/engine/dct.js';
-import { resizeArea } from '../../src/engine/raster.js';
+import { dct2d, idct2d } from '../engine/dct.js';
+import { resizeArea } from '../engine/raster.js';
 
 // ---------------------------------------------------------------------------
 // Random numbers

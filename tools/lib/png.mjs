@@ -42,6 +42,46 @@ function chunk(type, data) {
   return out;
 }
 
+/** Chunks that describe the image itself; everything else is metadata. */
+export const IMAGE_CHUNKS = Object.freeze(['IHDR', 'PLTE', 'tRNS', 'IDAT', 'IEND']);
+
+/**
+ * Lists the chunk types of a PNG file in order.
+ * @param {Uint8Array} bytes
+ * @returns {string[]}
+ */
+export function pngChunkTypes(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const types = [];
+  for (let p = 8; p + 8 <= bytes.length; p += 12 + view.getUint32(p)) {
+    types.push(String.fromCharCode(...bytes.subarray(p + 4, p + 8)));
+  }
+  return types;
+}
+
+/**
+ * Removes every chunk except IHDR, PLTE, tRNS, IDAT and IEND (text, time,
+ * colour profile, physical size and other metadata). The pixels are unchanged.
+ * @param {Uint8Array} bytes
+ * @returns {Uint8Array}
+ */
+export function stripPngMetadata(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const parts = [bytes.subarray(0, 8)];
+  for (let p = 8; p + 8 <= bytes.length;) {
+    const end = p + 12 + view.getUint32(p);
+    if (IMAGE_CHUNKS.includes(String.fromCharCode(...bytes.subarray(p + 4, p + 8)))) parts.push(bytes.subarray(p, end));
+    p = end;
+  }
+  const out = new Uint8Array(parts.reduce((n, part) => n + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
 function paeth(a, b, c) {
   const p = a + b - c;
   const pa = Math.abs(p - a);

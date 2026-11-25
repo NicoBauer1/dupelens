@@ -7,7 +7,7 @@ import { averageHash, differenceHash, dctHash, blockMean8 } from '../src/engine/
 import { colourHistogram, histogramIntersection, HISTOGRAM_SIZE } from '../src/engine/histogram.js';
 import { prepareSsim, ssim, ssimReference } from '../src/engine/ssim.js';
 import { laplacianVariance } from '../src/engine/sharpness.js';
-import { createRandom } from '../tools/lib/synth.mjs';
+import { createRandom } from '../src/samples/synth.js';
 
 const close = (actual, expected, tolerance, message) =>
   assert.ok(Math.abs(actual - expected) <= tolerance, `${message ?? ''} expected ${expected} ± ${tolerance}, got ${actual}`);

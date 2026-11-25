@@ -49,6 +49,7 @@ the synthetic files from `examples/`:
 ```sh
 npm run build
 npm run smoke                     # dist/dupelens.html from file://, with workers
+npm run screenshots               # refresh docs/images/ if the interface changed
 npm run smoke -- --no-workers     # the same with the main-thread fallback
 npm run serve                     # local development server, in a second terminal
 npm run smoke -- --url <address shown by npm run serve>
@@ -59,6 +60,8 @@ if available:
 
 - [ ] `dist/dupelens.html` opens by double-click (`file://`) without console
       errors and shows the version in the footer.
+- [ ] **Try with sample photos** finds the groups listed in
+      `examples/README.md`.
 - [ ] Loading the `examples/` folder via the folder picker and via drag and drop
       finds the expected groups.
 - [ ] Moving the threshold slider regroups instantly.

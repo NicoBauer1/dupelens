@@ -7,6 +7,7 @@
   --text: #1b1f24;
   --muted: #59616b;
   --border: #d4d9e0;
+  --control-border: #7d8693;
   --accent: #2f5fc4;
   --accent-text: #ffffff;
   --accent-soft: #e3ebfb;
@@ -32,6 +33,7 @@
     --text: #e8ebef;
     --muted: #a2abb6;
     --border: #36404b;
+    --control-border: #7a8696;
     --accent: #7ea6ff;
     --accent-text: #0d1420;
     --accent-soft: #1f2d48;
@@ -54,6 +56,7 @@
   --text: #e8ebef;
   --muted: #a2abb6;
   --border: #36404b;
+  --control-border: #7a8696;
   --accent: #7ea6ff;
   --accent-text: #0d1420;
   --accent-soft: #1f2d48;
@@ -227,7 +230,7 @@ a {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -295,7 +298,7 @@ select {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 6px 8px;
   min-height: 40px;
@@ -313,15 +316,90 @@ kbd {
   border-radius: 5px;
 }
 
+/* Steps */
+
+.steps-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 28px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.step[aria-current='step'] {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.step[aria-current='step'] .step-number {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.step.done .step-number {
+  color: var(--keep);
+}
+
 /* Start view */
+
+.intro {
+  max-width: 760px;
+  margin: 24px auto 0;
+  text-align: center;
+}
+
+.intro h2 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+}
+
+.lead {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
 
 .dropzone {
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 12px;
   margin: 24px auto;
   max-width: 760px;
-  padding: 48px 24px;
+  padding: 32px 24px;
   text-align: center;
   background: var(--surface);
   border: 2px dashed var(--border);
@@ -329,18 +407,9 @@ kbd {
   transition: border-color 0.15s, background 0.15s;
 }
 
-.dropzone h2 {
-  margin: 8px 0 0;
-}
-
-.dropzone p {
-  margin: 0 0 16px;
-  color: var(--muted);
-}
-
 .dropzone-icon .icon {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   color: var(--accent);
 }
 
@@ -350,7 +419,7 @@ body.dragging .dropzone,
   background: var(--accent-soft);
 }
 
-.highlights {
+.how-it-works {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
@@ -360,18 +429,44 @@ body.dragging .dropzone,
   list-style: none;
 }
 
-.highlights li {
+.how-it-works li {
   display: flex;
-  gap: 10px;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-.highlights .icon {
-  color: var(--keep);
-  margin-top: 2px;
+.how-it-works h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.how-it-works p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.how-number {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 50%;
+}
+
+.disclaimer {
+  max-width: 760px;
+  margin: 24px auto 8px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--muted);
 }
 
 /* Progress view */
@@ -392,6 +487,10 @@ progress {
   font-variant-numeric: tabular-nums;
 }
 
+#progress-view .hint {
+  margin: 0 0 16px;
+}
+
 /* Review toolbar */
 
 .toolbar {
@@ -399,7 +498,7 @@ progress {
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: minmax(260px, 1.2fr) 2fr;
+  grid-template-columns: minmax(300px, 1fr) auto;
   gap: 12px 24px;
   align-items: center;
   margin: 0 -16px 16px;
@@ -473,6 +572,11 @@ progress {
   color: var(--muted);
 }
 
+.review-hint {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
 /* Groups */
 
 .groups {
@@ -485,7 +589,6 @@ progress {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  scroll-margin-top: 180px;
 }
 
 .group:focus-visible,
@@ -686,11 +789,29 @@ progress {
 }
 
 .empty {
-  padding: 32px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 40px 24px;
   text-align: center;
   background: var(--surface);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
+}
+
+.empty h3,
+.empty p {
+  margin: 0;
+}
+
+.empty .button-row {
+  margin-top: 8px;
+}
+
+.empty-icon .icon {
+  width: 40px;
+  height: 40px;
+  color: var(--muted);
 }
 
 .sentinel {
@@ -771,6 +892,46 @@ progress {
 .shortcuts th {
   white-space: nowrap;
   font-weight: 400;
+}
+
+.dialog-body h3 {
+  margin: 20px 0 8px;
+  font-size: 1rem;
+}
+
+.dialog-body h3:first-child {
+  margin-top: 0;
+}
+
+.help-steps {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.help-steps li + li {
+  margin-top: 4px;
+}
+
+.guide {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.guide th,
+.guide td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.guide tbody th {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.export-summary {
+  margin-top: 0;
+  font-weight: 600;
 }
 
 .export-grid {
@@ -934,6 +1095,21 @@ progress {
   .compare-stage,
   .compare-controls {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Windows high contrast and other forced colours: keep states visible. */
+@media (forced-colors: active) {
+  .chip[aria-pressed='true'],
+  .chip[aria-checked='true'],
+  .decision .button[aria-pressed='true'],
+  .step[aria-current='step'] .step-number {
+    outline: 2px solid CanvasText;
+    outline-offset: 1px;
+  }
+
+  .tile.remove {
+    border-style: dashed;
   }
 }
 
