@@ -6,6 +6,7 @@ import { icon } from './icons.js';
 import { formatScore } from './format.js';
 
 export const COMPARE_MODES = ['side', 'slider', 'flicker', 'difference'];
+const MODE_NAMES = { side: 'Side by side', slider: 'Slider', flicker: 'Flicker', difference: 'Difference' };
 
 const FLICKER_MS = 700;
 const DIFFERENCE_WIDTH = 1200;
@@ -124,8 +125,10 @@ export class CompareView {
   render() {
     this.stop();
     for (const button of this.dialog.querySelectorAll('[data-mode]')) {
-      button.setAttribute('aria-checked', String(button.getAttribute('data-mode') === this.mode));
+      button.setAttribute('aria-pressed', String(button.getAttribute('data-mode') === this.mode));
     }
+    const status = this.dialog.querySelector('#compare-status');
+    if (status) status.textContent = `${MODE_NAMES[this.mode]}: photo ${this.number(this.left)} (left) and photo ${this.number(this.right)} (right).`;
     const stage = this.stage;
     stage.replaceChildren();
     stage.classList.toggle('single', this.mode !== 'side');
@@ -231,8 +234,9 @@ export class CompareView {
         this.render();
       });
       const decision = this.decisionOf(this.group, index);
-      const keep = h('button', { type: 'button', class: 'button keep-button', 'aria-pressed': String(decision === 'keep'), onclick: () => this.decide(index, 'keep') }, icon('keep'), 'Keep');
-      const remove = h('button', { type: 'button', class: 'button remove-button', 'aria-pressed': String(decision === 'remove'), onclick: () => this.decide(index, 'remove') }, icon('remove'), 'Remove');
+      const which = `${label.toLowerCase()} photo (photo ${this.number(index)})`;
+      const keep = h('button', { type: 'button', class: 'button keep-button', 'aria-pressed': String(decision === 'keep'), 'aria-label': `Keep ${which}`, onclick: () => this.decide(index, 'keep') }, icon('keep'), 'Keep');
+      const remove = h('button', { type: 'button', class: 'button remove-button', 'aria-pressed': String(decision === 'remove'), 'aria-label': `Remove ${which}`, onclick: () => this.decide(index, 'remove') }, icon('remove'), 'Remove');
       const other = index === this.left ? this.right : this.left;
       return h(
         'div',

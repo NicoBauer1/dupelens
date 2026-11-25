@@ -104,19 +104,19 @@
     <!-- Step 2: review groups -->
     <section id="review-view" class="view" aria-labelledby="review-title" hidden>
       <h2 id="review-title" class="visually-hidden">Review groups</h2>
-      <div class="toolbar" role="region" aria-label="Similarity and summary">
+      <div class="toolbar" id="toolbar" role="region" aria-label="Similarity and summary">
         <div class="threshold">
           <label for="threshold" class="threshold-label">How similar must photos be? <output id="threshold-value" for="threshold">90 %</output></label>
           <input type="range" id="threshold" min="70" max="100" step="0.5" value="90" aria-keyshortcuts="t" aria-describedby="threshold-help">
           <p id="threshold-help" class="hint">Higher finds only near-exact copies. Lower also finds edited and cropped versions.</p>
-          <div class="presets" role="group" aria-label="Presets">
+          <div class="presets" role="group" aria-label="Similarity presets">
             <button type="button" class="chip" data-preset="100">Exact · 100 %</button>
             <button type="button" class="chip" data-preset="95">Near-identical · 95 %</button>
             <button type="button" class="chip" data-preset="90">Default · 90 %</button>
             <button type="button" class="chip" data-preset="80">Similar shots · 80 %</button>
           </div>
         </div>
-        <dl class="summary" id="summary" aria-live="polite"></dl>
+        <dl class="summary" id="summary"></dl>
         <div class="toolbar-actions">
           <label class="select-label">Sort groups
             <select id="sort-order"></select>
@@ -153,14 +153,15 @@
   <dialog id="compare-dialog" class="dialog compare-dialog" aria-labelledby="compare-title">
     <div class="dialog-header">
       <h2 id="compare-title">Compare</h2>
-      <div class="compare-modes" role="radiogroup" aria-label="Compare mode">
-        <button type="button" class="chip" data-mode="side" role="radio">Side by side</button>
-        <button type="button" class="chip" data-mode="slider" role="radio">Slider</button>
-        <button type="button" class="chip" data-mode="flicker" role="radio">Flicker</button>
-        <button type="button" class="chip" data-mode="difference" role="radio">Difference</button>
+      <div class="compare-modes" role="group" aria-label="Compare mode">
+        <button type="button" class="chip" data-mode="side" aria-pressed="true">Side by side</button>
+        <button type="button" class="chip" data-mode="slider" aria-pressed="false">Slider</button>
+        <button type="button" class="chip" data-mode="flicker" aria-pressed="false">Flicker</button>
+        <button type="button" class="chip" data-mode="difference" aria-pressed="false">Difference</button>
       </div>
       <button type="button" class="icon-button" data-close aria-label="Close compare view"><span data-icon="close"></span></button>
     </div>
+    <p id="compare-status" class="visually-hidden" aria-live="polite"></p>
     <div id="compare-stage" class="compare-stage"></div>
     <div id="compare-controls" class="compare-controls"></div>
     <p class="muted compare-hint">← → choose the right photo · M switches the mode · K keep · R remove · Esc closes</p>

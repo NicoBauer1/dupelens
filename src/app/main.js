@@ -36,6 +36,9 @@ const state = {
   urls: new Map(),
   busy: false,
   loads: 0,
+  announceTimer: 0,
+  /** @type {(() => void) | null} */
+  reservePadding: null,
 };
 
 const ui = {};
@@ -47,7 +50,7 @@ function cacheElements() {
     'progress-mode', 'cancel-button', 'threshold', 'threshold-value', 'summary', 'sort-order',
     'export-button', 'restart-button', 'groups', 'groups-sentinel', 'skipped', 'skipped-summary',
     'skipped-list', 'engine-mode', 'app-version', 'announcer', 'theme-toggle', 'help-button',
-    'compare-dialog', 'export-dialog', 'export-body', 'help-dialog', 'main', 'steps', 'review-hint',
+    'compare-dialog', 'export-dialog', 'export-body', 'help-dialog', 'main', 'steps', 'review-hint', 'toolbar',
   ]) {
     ui[id.replace(/-(\w)/g, (_, c) => c.toUpperCase())] = byId(id);
   }
@@ -61,6 +64,7 @@ function showView(name) {
   ui.progressView.hidden = name !== 'progress';
   ui.reviewView.hidden = name !== 'review';
   setStep(name === 'review' ? 2 : 1);
+  if (state.reservePadding) state.reservePadding();
 }
 
 /**
@@ -191,6 +195,7 @@ async function addFiles(loaded) {
     : `Analysing on the main thread: ${pool.reason}`;
 
   const jobs = fresh.map((item) => ({ file: item.file, name: item.file.name }));
+  announce(`Analysing ${plural(jobs.length, 'file')}…`);
   const started = performance.now();
   let done = 0;
   let skipped = 0;
@@ -364,6 +369,7 @@ function emptyState() {
         ? h('button', { type: 'button', class: 'button primary', 'data-action': 'lower', onclick: () => {
           setThreshold(lower);
           announceGroups();
+          ui.threshold.focus();
         } }, lowerLabel)
         : null,
       h('button', { type: 'button', class: 'button', onclick: () => ui.addInput.click() }, icon('plus'), 'Add photos'),
@@ -418,22 +424,23 @@ function groupCard(g) {
   const status = session.status(group);
   const titleId = `group-title-${g}`;
   const savings = session.groupSavings(group);
-  const card = h('article', { class: 'group', tabindex: '-1', 'aria-labelledby': titleId, dataset: { group: String(g) } });
+  const metaId = `group-meta-${g}`;
+  const card = h('article', { class: 'group', tabindex: '-1', 'aria-labelledby': titleId, 'aria-describedby': metaId, dataset: { group: String(g) } });
   if (g === state.current) card.classList.add('current');
 
   const actions = h('div', { class: 'group-actions' },
-    h('button', { type: 'button', class: 'button', 'data-focus-key': 'compare', 'aria-keyshortcuts': 'c', onclick: () => openCompare(g) }, icon('compare'), 'Compare'),
-    h('button', { type: 'button', class: 'button', 'data-focus-key': 'accept', 'aria-keyshortcuts': 'a', onclick: () => accept(g) }, icon('check'), status === 'reviewed' ? 'Reviewed' : 'Accept'),
-    h('button', { type: 'button', class: 'button', 'data-focus-key': 'keepall', 'aria-keyshortcuts': 'n', 'aria-pressed': String(status === 'not-duplicates'), onclick: () => keepAll(g) }, icon('equal'), 'Not duplicates — keep all'),
+    h('button', { type: 'button', class: 'button', 'data-focus-key': 'compare', 'aria-keyshortcuts': 'c', 'aria-describedby': titleId, onclick: () => openCompare(g) }, icon('compare'), 'Compare'),
+    h('button', { type: 'button', class: 'button', 'data-focus-key': 'accept', 'aria-keyshortcuts': 'a', 'aria-describedby': titleId, onclick: () => accept(g) }, icon('check'), status === 'reviewed' ? 'Reviewed' : 'Accept'),
+    h('button', { type: 'button', class: 'button', 'data-focus-key': 'keepall', 'aria-keyshortcuts': 'n', 'aria-describedby': titleId, 'aria-pressed': String(status === 'not-duplicates'), onclick: () => keepAll(g) }, icon('equal'), 'Not duplicates — keep all'),
     status !== 'suggested'
-      ? h('button', { type: 'button', class: 'button', 'data-focus-key': 'reset', 'aria-keyshortcuts': 'u', onclick: () => resetGroup(g) }, icon('undo'), 'Undo')
+      ? h('button', { type: 'button', class: 'button', 'data-focus-key': 'reset', 'aria-keyshortcuts': 'u', 'aria-describedby': titleId, onclick: () => resetGroup(g) }, icon('undo'), 'Undo')
       : null,
   );
 
   card.append(
     h('header', { class: 'group-header' },
       h('h3', { class: 'group-title', id: titleId, text: `Group ${g + 1} of ${session.groups.length}` }),
-      h('span', { class: 'group-meta', text: `${plural(group.members.length, 'photo')} · ${formatBytes(savings)} to free · lowest score ${formatScore(group.minScore)}` }),
+      h('span', { class: 'group-meta', id: metaId, text: `${plural(group.members.length, 'photo')} · ${formatBytes(savings)} to free · lowest score ${formatScore(group.minScore)}` }),
       statusBadge(status),
       session.allRemoved(group) ? h('span', { class: 'badge warning' }, icon('warning'), 'Every copy is marked for removal') : null,
       actions,
@@ -446,7 +453,8 @@ function groupCard(g) {
     const decision = session.decision(group, member.index);
     const url = urlFor(member.index);
     const label = `Photo ${n + 1}: ${e.path}`;
-    const thumb = h('button', { type: 'button', class: 'thumb', 'aria-label': `Compare photo ${n + 1} with the keeper`, onclick: () => openCompare(g, member.index) },
+    const thumbLabel = member.keeper ? `Compare photo ${n + 1}, the suggested keeper, with the other photos` : `Compare photo ${n + 1} with the suggested keeper`;
+    const thumb = h('button', { type: 'button', class: 'thumb', 'aria-label': thumbLabel, onclick: () => openCompare(g, member.index) },
       url
         ? h('img', { src: url, alt: label, loading: 'lazy', decoding: 'async' })
         : h('span', { class: 'placeholder', text: e.reason || 'No preview' }),
@@ -470,8 +478,8 @@ function groupCard(g) {
         thumb,
         h('div', {}, head, describeEntry(member.index)),
         h('div', { class: 'decision', role: 'group', 'aria-label': `Decision for photo ${n + 1}` },
-          h('button', { type: 'button', class: 'button keep-button', 'data-focus-key': `keep-${n}`, 'aria-pressed': String(decision === 'keep'), onclick: choose('keep') }, icon('keep'), 'Keep'),
-          h('button', { type: 'button', class: 'button remove-button', 'data-focus-key': `remove-${n}`, 'aria-pressed': String(decision === 'remove'), onclick: choose('remove') }, icon('remove'), 'Remove'),
+          h('button', { type: 'button', class: 'button keep-button', 'data-focus-key': `keep-${n}`, 'aria-pressed': String(decision === 'keep'), 'aria-label': `Keep photo ${n + 1}`, onclick: choose('keep') }, icon('keep'), 'Keep'),
+          h('button', { type: 'button', class: 'button remove-button', 'data-focus-key': `remove-${n}`, 'aria-pressed': String(decision === 'remove'), 'aria-label': `Remove photo ${n + 1}`, onclick: choose('remove') }, icon('remove'), 'Remove'),
         ),
       ),
     );
@@ -655,7 +663,12 @@ function wireEvents() {
     ui.progressText.textContent = 'Stopping after the files in progress…';
   });
 
-  ui.threshold.addEventListener('input', () => setThreshold(Number(ui.threshold.value)));
+  ui.threshold.addEventListener('input', () => {
+    setThreshold(Number(ui.threshold.value));
+    // Announce the new grouping once the slider rests, not on every step.
+    clearTimeout(state.announceTimer);
+    state.announceTimer = setTimeout(announceGroups, 600);
+  });
   for (const chip of document.querySelectorAll('[data-preset]')) {
     chip.addEventListener('click', () => {
       setThreshold(Number(chip.getAttribute('data-preset')));
@@ -667,6 +680,7 @@ function wireEvents() {
     state.session.setSortOrder(ui.sortOrder.value);
     state.current = -1;
     renderGroups();
+    announce(`Groups sorted: ${SORT_ORDERS[ui.sortOrder.value]}.`);
   });
 
   ui.exportButton.addEventListener('click', openExport);
@@ -705,6 +719,16 @@ function wireEvents() {
   }
 
   document.addEventListener('keydown', onKeyDown);
+
+  // The sticky toolbar must not cover the element that has the keyboard focus:
+  // reserve its height as scroll padding while the review is shown.
+  const reservePadding = () => {
+    const sticky = !ui.reviewView.hidden && getComputedStyle(ui.toolbar).position === 'sticky';
+    document.documentElement.style.scrollPaddingTop = sticky ? `${ui.toolbar.offsetHeight + 16}px` : '';
+  };
+  if ('ResizeObserver' in globalThis) new ResizeObserver(reservePadding).observe(ui.toolbar);
+  window.addEventListener('resize', reservePadding);
+  state.reservePadding = reservePadding;
 }
 
 function onKeyDown(event) {

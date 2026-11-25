@@ -18,7 +18,9 @@
 // presets and the keyboard shortcuts work, the compare modes render, the four
 // exports download — the sh script is then run on a temporary copy of
 // examples/ (dry run, then apply) — and a folder without duplicates shows the
-// empty state.
+// empty state. Accessibility: the start screen is operated with Tab and Enter
+// only, the focus is visible, every control has an accessible name and
+// regrouping is announced.
 
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -182,8 +184,31 @@ async function main() {
     check(start.steps.length === 3 && start.step === '1 Choose photos' && /as is/.test(start.note) && /without warranty/.test(start.note) && /sample photos/.test(start.sample),
       'start screen shows the three steps, the "as is" note and the sample button', `${start.steps.join(' → ')}; current: ${start.step}`);
 
-    // "Try with sample photos": the demo set is drawn in the browser and analysed.
-    await evaluate("document.getElementById('sample-button').click(), true");
+    // Keyboard only: Tab from the top of the page reaches the controls in a
+    // logical order with a visible focus indicator; Enter starts the demo.
+    const key = async (name, code, keyCode, text) => {
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: keyCode, text });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode: keyCode });
+    };
+    await evaluate("document.activeElement && document.activeElement.blur(), true");
+    const order = [];
+    let focusStyle = null;
+    for (let i = 0; i < 6; i++) {
+      await key('Tab', 'Tab', 9);
+      const focused = await evaluate(`(() => {
+        const el = document.activeElement;
+        const style = getComputedStyle(el);
+        return { name: el.id || el.className, outline: style.outlineStyle + ' ' + style.outlineWidth };
+      })()`);
+      order.push(focused.name);
+      if (focused.name === 'sample-button') focusStyle = focused.outline;
+    }
+    const expectedOrder = ['skip-link', 'theme-toggle', 'help-button', 'folder-button', 'file-button', 'sample-button'];
+    check(order.join() === expectedOrder.join() && /^solid [3-9]/.test(focusStyle || ''),
+      'keyboard: Tab order on the start screen with a visible focus indicator', `${order.join(' → ')}; focus ${focusStyle}`);
+
+    // "Try with sample photos" with Enter: the demo set is drawn in the browser and analysed.
+    await key('Enter', 'Enter', 13, '\r');
     await waitFor(() => evaluate("!document.getElementById('review-view').hidden"), 90000, 'the review of the sample photos');
     const demo = await evaluate(`({
       step: ${currentStep},
@@ -192,6 +217,27 @@ async function main() {
     const demoBeach = demo.groups.find((g) => g.includes('sample-photos/holiday/beach-sunset.png'));
     check(demo.groups.length === 5 && Boolean(demoBeach && demoBeach.length === 4) && demo.step === '2 Review groups',
       'sample photos: five groups at 90 % and step 2 is current', `${demo.groups.length} groups; current: ${demo.step}`);
+    const names = await evaluate(`(() => {
+      const nameOf = (el) => (el.getAttribute('aria-label') || (el.labels && el.labels[0] ? el.labels[0].textContent : '') || el.textContent).trim();
+      const controls = [...document.querySelectorAll('button, input, select')].filter((el) => el.type !== 'file' && !el.closest('[hidden]') && !el.closest('dialog:not([open])'));
+      const cards = [...document.querySelectorAll('.group')];
+      return {
+        controls: controls.length,
+        unnamed: controls.filter((el) => !nameOf(el)).map((el) => el.outerHTML.slice(0, 80)),
+        cards: cards.length,
+        unlabelledCards: cards.filter((c) => !(document.getElementById(c.getAttribute('aria-labelledby')) || {}).textContent).length,
+      };
+    })()`);
+    check(names.controls > 20 && names.unnamed.length === 0 && names.cards > 0 && names.unlabelledCards === 0,
+      'every control and every group card has an accessible name', `${names.controls} controls, ${names.cards} cards${names.unnamed.length ? `; unnamed: ${names.unnamed.join(' | ')}` : ''}`);
+    const announced = await evaluate(`(async () => {
+      document.querySelector('[data-preset="100"]').click();
+      await new Promise((r) => setTimeout(r, 150));
+      const text = document.getElementById('announcer').textContent;
+      document.querySelector('[data-preset="90"]').click();
+      return text;
+    })()`);
+    check(/^Similarity 100 %: 1 group\.$/.test(announced), 'regrouping is announced to screen readers', announced);
     await evaluate("document.getElementById('restart-button').click(), true");
     check(await evaluate("!document.getElementById('start-view').hidden"), 'start over returns to step 1');
 
