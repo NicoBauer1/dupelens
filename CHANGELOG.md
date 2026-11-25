@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-25
+
+### Added
+
+- **Try with sample photos** on the start screen: DupeLens draws the synthetic
+  demo set in the browser (the same pictures as in `examples/`) and analyses
+  it, so the app can be tried without choosing own photos.
+- README with screenshots, a usage guide for the three steps, a threshold
+  guide, keyboard shortcuts, exports, known limitations and a disclaimer.
+- `npm run screenshots` (`tools/screenshots.mjs`) takes the README screenshots
+  in `docs/images/` from the sample photos in a headless browser and keeps only
+  the image data of the PNG files; the smoke test and the screenshot tool share
+  `tools/lib/browser.mjs`.
+
+### Changed
+
+- Simpler interface with three numbered steps — 1 Choose photos, 2 Review
+  groups, 3 Export — plain-language labels and one-line hints, for example
+  "How similar must photos be?" for the similarity threshold.
+- A clearer empty state when no group reaches the similarity, with a button for
+  the next lower preset.
+- The export dialog is split into "Save your decisions" and "Move the photos
+  marked Remove".
+- The start screen shows a short note: provided "as is", without warranty;
+  keep a backup of your photos.
+- The synthetic image generator moved from `tools/lib/synth.mjs` to
+  `src/samples/synth.js`, next to the demo set in `src/samples/demo-set.js`.
+- Accessibility: a logical keyboard order with a visible focus indicator on
+  every step; keep, remove and group buttons name the photo or group they act
+  on; the compare modes are toggle buttons; regrouping, sorting and the start
+  of an analysis are announced to screen readers; the sticky toolbar no longer
+  covers the focused element; control borders and all text meet WCAG 2.2 AA
+  contrast in the light and the dark theme (checked by a unit test); states
+  stay visible in forced-colours mode.
+
 ## [0.1.0] - 2026-11-24
 
 ### Added
@@ -58,5 +93,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   policy, branching and release documentation, a pull request template, CI
   workflow and decision records.
 
-[Unreleased]: https://github.com/NicoBauer1/dupelens/compare/v0.1.0...develop
+[Unreleased]: https://github.com/NicoBauer1/dupelens/compare/v1.0.0...develop
+[1.0.0]: https://github.com/NicoBauer1/dupelens/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/NicoBauer1/dupelens/releases/tag/v0.1.0

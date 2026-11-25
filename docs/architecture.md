@@ -26,7 +26,7 @@ src/engine/          pure analysis code, no DOM — runs in workers, on the main
   keeper.js          keeper suggestion and its reason
   bits.js            64-bit hashes as two 32-bit words, popcount
 src/app/             browser application
-  main.js            controller: loading, progress, review rendering, keyboard, export dialog
+  main.js            controller: steps, loading, progress, review rendering, keyboard, export dialog
   review.js          review state (groups, keeper, decisions, summary, report) — DOM-free, unit-tested
   pool.js            worker pool with main-thread fallback
   worker.js          worker entry point
@@ -34,7 +34,11 @@ src/app/             browser application
   analyse-file.js    read → SHA-256 → header → decode → fingerprint (worker and main thread)
   loader.js          file picker, folder picker, drag and drop (recursive folders)
   compare.js         compare dialog (side by side, slider, flicker, difference)
+  samples.js         "Try with sample photos": draws the demo set and encodes it as PNG files
   dom.js, icons.js, format.js, version.js, styles.css
+src/samples/         synthetic photos, no DOM — used by the app, the tools and the tests
+  synth.js           procedural scenes and the transforms of the calibration suite
+  demo-set.js        the demo set (also written to examples/ by tools/make-samples.mjs)
 src/export/
   report.js          JSON and CSV reports
   scripts.js         PowerShell and sh move scripts, quoting

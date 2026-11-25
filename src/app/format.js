@@ -46,6 +46,15 @@ export function formatScore(score) {
 }
 
 /**
+ * A similarity threshold: whole numbers without decimals ("90 %"), steps of
+ * the slider with one decimal ("92.5 %").
+ * @param {number} value
+ */
+export function formatThreshold(value) {
+  return Number.isInteger(value) ? `${value} %` : `${value.toFixed(1)} %`;
+}
+
+/**
  * @param {number} width
  * @param {number} height
  */
