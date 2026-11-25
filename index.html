@@ -19,80 +19,116 @@
       <span class="brand-logo" data-icon="logo"></span>
       <div>
         <h1 class="brand-name">DupeLens</h1>
-        <p class="brand-tagline">Duplicate photo finder that runs in your browser</p>
+        <p class="brand-tagline">Find duplicate photos in your browser</p>
       </div>
     </div>
     <div class="header-actions">
       <button type="button" class="icon-button" id="theme-toggle" aria-label="Colour theme: system">
         <span data-icon="theme"></span>
       </button>
-      <button type="button" class="icon-button" id="help-button" aria-label="Keyboard shortcuts and help" aria-keyshortcuts="?">
+      <button type="button" class="icon-button" id="help-button" aria-label="Help and keyboard shortcuts" aria-keyshortcuts="?">
         <span data-icon="help"></span>
       </button>
     </div>
   </header>
+
+  <nav class="steps-bar" aria-label="Steps">
+    <ol class="steps" id="steps">
+      <li class="step" data-step="1" aria-current="step"><span class="step-number" aria-hidden="true">1</span> Choose photos</li>
+      <li class="step" data-step="2"><span class="step-number" aria-hidden="true">2</span> Review groups</li>
+      <li class="step" data-step="3"><span class="step-number" aria-hidden="true">3</span> Export</li>
+    </ol>
+  </nav>
 
   <main id="main" tabindex="-1">
     <noscript>
       <p class="notice">DupeLens needs JavaScript. It analyses photos in your browser.</p>
     </noscript>
 
-    <!-- Start: choose photos -->
+    <!-- Step 1: choose photos -->
     <section id="start-view" class="view" aria-labelledby="start-title">
+      <div class="intro">
+        <h2 id="start-title">Find duplicate photos</h2>
+        <p class="lead">Choose a folder or a few photos. DupeLens compares them in this browser, groups copies and look-alikes, and lets you decide which ones to keep.</p>
+      </div>
       <div id="dropzone" class="dropzone">
         <span class="dropzone-icon" data-icon="photos"></span>
-        <h2 id="start-title">Drop photos or folders here</h2>
-        <p>or choose them — DupeLens finds exact copies and near-duplicates and asks you which ones to keep.</p>
         <div class="button-row">
           <button type="button" class="button primary" id="folder-button"><span data-icon="folder"></span> Choose folder</button>
           <button type="button" class="button" id="file-button"><span data-icon="image"></span> Choose photos</button>
+          <button type="button" class="button" id="sample-button" aria-describedby="sample-hint"><span data-icon="sparkle"></span> Try with sample photos</button>
           <input type="file" id="folder-input" webkitdirectory multiple hidden>
           <input type="file" id="file-input" multiple accept="image/*,.heic,.heif,.avif,.webp,.tif,.tiff" hidden>
         </div>
+        <p class="hint">You can also drop photos or folders anywhere on this page.</p>
+        <p class="hint" id="sample-hint">The sample photos are drawn by DupeLens in this browser: a few pictures plus resized, edited and copied versions of them.</p>
       </div>
-      <ul class="highlights">
-        <li><span data-icon="lock"></span><span><strong>In your browser.</strong> Photos are read with the browser's File API and analysed in this page. The page declares a Content-Security-Policy that tells the browser to block network connections.</span></li>
-        <li><span data-icon="eye"></span><span><strong>Transparent.</strong> Pixel analysis, no machine learning, no cloud. One documented similarity score.</span></li>
-        <li><span data-icon="shield"></span><span><strong>You decide.</strong> DupeLens itself does not write to your files. You get a list and an optional script that moves files into a review folder.</span></li>
-      </ul>
+
+      <ol class="how-it-works" aria-label="How it works">
+        <li>
+          <span class="how-number" aria-hidden="true">1</span>
+          <div>
+            <h3>Choose photos</h3>
+            <p>Pick a folder or single photos. They are read with the browser's File API and analysed in this page.</p>
+          </div>
+        </li>
+        <li>
+          <span class="how-number" aria-hidden="true">2</span>
+          <div>
+            <h3>Review groups</h3>
+            <p>Photos that look alike are shown together. DupeLens suggests which one to keep; you can change every decision.</p>
+          </div>
+        </li>
+        <li>
+          <span class="how-number" aria-hidden="true">3</span>
+          <div>
+            <h3>Export</h3>
+            <p>Download your decisions as a list, or a script that moves the photos you marked into a review folder.</p>
+          </div>
+        </li>
+      </ol>
+
+      <p class="disclaimer" id="disclaimer">DupeLens is provided “as is”, without warranty of any kind (MIT licence). Use it at your own risk and keep a backup of your photos.</p>
     </section>
 
-    <!-- Progress: analysing and comparing -->
+    <!-- Step 1, continued: analysing and comparing -->
     <section id="progress-view" class="view" aria-labelledby="progress-title" hidden>
       <h2 id="progress-title">Analysing photos…</h2>
-      <progress id="progress-bar" max="1" value="0" aria-describedby="progress-text"></progress>
+      <progress id="progress-bar" max="1" value="0" aria-labelledby="progress-title" aria-describedby="progress-text"></progress>
       <p id="progress-text" class="progress-text">Preparing…</p>
       <p id="progress-mode" class="muted"></p>
+      <p class="hint">This happens in your browser. Large folders can take a few minutes.</p>
       <button type="button" class="button" id="cancel-button">Cancel</button>
     </section>
 
-    <!-- Review -->
+    <!-- Step 2: review groups -->
     <section id="review-view" class="view" aria-labelledby="review-title" hidden>
-      <h2 id="review-title" class="visually-hidden">Review duplicates</h2>
-      <div class="toolbar" role="region" aria-label="Threshold and summary">
+      <h2 id="review-title" class="visually-hidden">Review groups</h2>
+      <div class="toolbar" role="region" aria-label="Similarity and summary">
         <div class="threshold">
-          <label for="threshold" class="threshold-label">Similarity threshold <output id="threshold-value" for="threshold">90 %</output></label>
+          <label for="threshold" class="threshold-label">How similar must photos be? <output id="threshold-value" for="threshold">90 %</output></label>
           <input type="range" id="threshold" min="70" max="100" step="0.5" value="90" aria-keyshortcuts="t" aria-describedby="threshold-help">
+          <p id="threshold-help" class="hint">Higher finds only near-exact copies. Lower also finds edited and cropped versions.</p>
           <div class="presets" role="group" aria-label="Presets">
-            <button type="button" class="chip" data-preset="100">Exact</button>
-            <button type="button" class="chip" data-preset="95">Near-identical</button>
-            <button type="button" class="chip" data-preset="90">Default</button>
-            <button type="button" class="chip" data-preset="80">Similar shots</button>
+            <button type="button" class="chip" data-preset="100">Exact · 100 %</button>
+            <button type="button" class="chip" data-preset="95">Near-identical · 95 %</button>
+            <button type="button" class="chip" data-preset="90">Default · 90 %</button>
+            <button type="button" class="chip" data-preset="80">Similar shots · 80 %</button>
           </div>
-          <p id="threshold-help" class="visually-hidden">Photos that score at least this much against each other are grouped. Changing it regroups instantly.</p>
         </div>
         <dl class="summary" id="summary" aria-live="polite"></dl>
         <div class="toolbar-actions">
-          <label class="select-label">Sort
+          <label class="select-label">Sort groups
             <select id="sort-order"></select>
           </label>
-          <button type="button" class="button primary" id="export-button" aria-keyshortcuts="e"><span data-icon="download"></span> Export</button>
           <button type="button" class="button" id="add-button"><span data-icon="plus"></span> Add photos</button>
           <input type="file" id="add-input" multiple hidden>
           <button type="button" class="button" id="restart-button"><span data-icon="restart"></span> Start over</button>
+          <button type="button" class="button primary" id="export-button" aria-keyshortcuts="e"><span data-icon="download"></span> Next: export</button>
         </div>
       </div>
-      <div id="groups" class="groups" aria-label="Duplicate groups"></div>
+      <p class="review-hint" id="review-hint">Each group shows photos that look alike. The photo marked <strong>Suggested keeper</strong> is the one DupeLens would keep. Check the group, switch <strong>Keep</strong> / <strong>Remove</strong> where needed, then press <strong>Accept</strong>.</p>
+      <div id="groups" class="groups" aria-label="Groups of similar photos"></div>
       <div id="groups-sentinel" class="sentinel" aria-hidden="true"></div>
       <details id="skipped" class="skipped" hidden>
         <summary id="skipped-summary">Skipped files</summary>
@@ -127,13 +163,13 @@
     </div>
     <div id="compare-stage" class="compare-stage"></div>
     <div id="compare-controls" class="compare-controls"></div>
-    <p class="muted compare-hint">← → choose the right image · M switches the mode · K keep · R remove · Esc closes</p>
+    <p class="muted compare-hint">← → choose the right photo · M switches the mode · K keep · R remove · Esc closes</p>
   </dialog>
 
-  <!-- Export dialog -->
+  <!-- Step 3: export -->
   <dialog id="export-dialog" class="dialog" aria-labelledby="export-title">
     <div class="dialog-header">
-      <h2 id="export-title">Export decisions</h2>
+      <h2 id="export-title">Step 3 · Export your decisions</h2>
       <button type="button" class="icon-button" data-close aria-label="Close export dialog"><span data-icon="close"></span></button>
     </div>
     <div id="export-body" class="dialog-body"></div>
@@ -142,26 +178,43 @@
   <!-- Help dialog -->
   <dialog id="help-dialog" class="dialog" aria-labelledby="help-title">
     <div class="dialog-header">
-      <h2 id="help-title">Keyboard shortcuts</h2>
+      <h2 id="help-title">Help</h2>
       <button type="button" class="icon-button" data-close aria-label="Close help"><span data-icon="close"></span></button>
     </div>
     <div class="dialog-body">
+      <h3>How it works</h3>
+      <ol class="help-steps">
+        <li><strong>Choose photos</strong> — a folder, single photos, or the sample photos. They are read with the browser's File API and analysed in this page.</li>
+        <li><strong>Review groups</strong> — photos that look alike are grouped. Keep the suggestion or switch Keep / Remove, then accept the group.</li>
+        <li><strong>Export</strong> — download your decisions (JSON, CSV) or a move script. DupeLens itself does not write to your files.</li>
+      </ol>
+      <h3>What the similarity means</h3>
+      <table class="guide">
+        <thead><tr><th scope="col">Similarity</th><th scope="col">Typical cases</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">100 %</th><td>Exact copies: the same file, or the same pixels saved again</td></tr>
+          <tr><th scope="row">95 %</th><td>Resized or re-saved copies and very light edits</td></tr>
+          <tr><th scope="row">90 % (default)</th><td>Also brightness or colour edits, small crops, an added caption</td></tr>
+          <tr><th scope="row">80 %</th><td>Also bigger crops, black-and-white versions, strong edits</td></tr>
+        </tbody>
+      </table>
+      <h3>Keyboard shortcuts</h3>
       <table class="shortcuts">
         <tbody>
           <tr><th scope="row"><kbd>J</kbd> / <kbd>↓</kbd></th><td>Next group</td></tr>
           <tr><th scope="row"><kbd>K</kbd> / <kbd>↑</kbd></th><td>Previous group</td></tr>
-          <tr><th scope="row"><kbd>1</kbd> … <kbd>9</kbd></th><td>Toggle keep/remove for photo 1–9 of the group</td></tr>
-          <tr><th scope="row"><kbd>A</kbd> / <kbd>Enter</kbd></th><td>Accept the decisions of the group and go to the next one</td></tr>
+          <tr><th scope="row"><kbd>1</kbd> … <kbd>9</kbd></th><td>Switch keep/remove for photo 1–9 of the group</td></tr>
+          <tr><th scope="row"><kbd>A</kbd> / <kbd>Enter</kbd></th><td>Accept the group and go to the next one</td></tr>
           <tr><th scope="row"><kbd>N</kbd></th><td>Not duplicates — keep all</td></tr>
           <tr><th scope="row"><kbd>U</kbd></th><td>Undo: back to the suggestion</td></tr>
           <tr><th scope="row"><kbd>C</kbd></th><td>Compare the photos of the group</td></tr>
-          <tr><th scope="row"><kbd>T</kbd></th><td>Focus the threshold slider</td></tr>
+          <tr><th scope="row"><kbd>T</kbd></th><td>Go to the similarity slider</td></tr>
           <tr><th scope="row"><kbd>E</kbd></th><td>Export</td></tr>
           <tr><th scope="row"><kbd>?</kbd></th><td>This help</td></tr>
           <tr><th scope="row"><kbd>Esc</kbd></th><td>Close a dialog</td></tr>
         </tbody>
       </table>
-      <p class="muted">How the score works and what 100, 95, 90 and 80 % mean is explained in the project documentation (docs/similarity.md).</p>
+      <p class="muted">The score and its calibration are explained in the project documentation (docs/similarity.md).</p>
     </div>
   </dialog>
 </body>

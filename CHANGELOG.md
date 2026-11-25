@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Try with sample photos** on the start screen: DupeLens draws the synthetic
+  demo set in the browser (the same pictures as in `examples/`) and analyses
+  it, so the app can be tried without choosing own photos.
+
+### Changed
+
+- Simpler interface with three numbered steps — 1 Choose photos, 2 Review
+  groups, 3 Export — plain-language labels and one-line hints, for example
+  "How similar must photos be?" for the similarity threshold.
+- A clearer empty state when no group reaches the similarity, with a button for
+  the next lower preset.
+- The export dialog is split into "Save your decisions" and "Move the photos
+  marked Remove".
+- The start screen shows a short note: provided "as is", without warranty;
+  keep a backup of your photos.
+- The synthetic image generator moved from `tools/lib/synth.mjs` to
+  `src/samples/synth.js`, next to the demo set in `src/samples/demo-set.js`.
+
 ## [0.1.0] - 2026-11-24
 
 ### Added

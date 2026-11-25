@@ -9,7 +9,7 @@
 import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import * as synth from './lib/synth.mjs';
+import { demoSamples } from '../src/samples/demo-set.js';
 import { encodePng, decodePng } from './lib/png.mjs';
 import { computeFingerprint } from '../src/engine/fingerprint.js';
 import { prepareFingerprint } from '../src/engine/similarity.js';
@@ -18,38 +18,9 @@ import { findPairs } from '../src/engine/matcher.js';
 import { groupPairs } from '../src/engine/grouping.js';
 
 const root = fileURLToPath(new URL('../examples/', import.meta.url));
-const W = 256;
-const H = 192;
 
-const beach = synth.renderScene('landscape', 4101, W, H);
-const skyline = synth.renderScene('city', 4202, W, H);
-const portrait = synth.renderScene('portrait', 4303, W, H);
-const harbour = synth.renderScene('seascape', 4404, W, H);
-const forest = synth.renderScene('forest', 4505, W, H);
-const fruit = synth.renderScene('stillLife', 4606, W, H);
-const shapes = synth.renderScene('abstract', 4707, W, H);
-const stone = synth.renderScene('texture', 4808, W, H);
-
-/** @type {Array<{ file: string, image?: object, copyOf?: string, note: string }>} */
-export const SAMPLES = [
-  { file: 'holiday/beach-sunset.png', image: beach, note: 'original' },
-  { file: 'holiday/beach-sunset-small.png', image: synth.resize(beach, 0.5), note: 'downscaled to 50 %' },
-  { file: 'holiday/beach-sunset-brighter.png', image: synth.brightness(beach, 0.06), note: 'brightness +6 %' },
-  { file: 'holiday/copies/beach-sunset.png', copyOf: 'holiday/beach-sunset.png', note: 'byte-identical copy' },
-  { file: 'holiday/harbour.png', image: harbour, note: 'original' },
-  { file: 'holiday/harbour-caption.png', image: synth.watermark(harbour), note: 'caption bar added' },
-  { file: 'city/skyline.png', image: skyline, note: 'original' },
-  { file: 'city/skyline-cropped.png', image: synth.crop(skyline, 0.04), note: 'centre crop 4 %' },
-  { file: 'city/skyline-recompressed.png', image: synth.jpegLike(skyline, 60), note: 'JPEG-like quality 60, saved as PNG' },
-  { file: 'people/portrait.png', image: portrait, note: 'original' },
-  { file: 'people/portrait-greyscale.png', image: synth.grayscale(portrait), note: 'converted to greyscale' },
-  { file: 'nature/forest.png', image: forest, note: 'original' },
-  { file: 'nature/forest-noisy.png', image: synth.noise(forest, 5, 3), note: 'Gaussian noise σ = 5' },
-  { file: 'nature/forest-rotated.png', image: synth.rotate90(forest), note: 'rotated 90° (not detected)' },
-  { file: 'misc/fruit-bowl.png', image: fruit, note: 'unique' },
-  { file: 'misc/shapes.png', image: shapes, note: 'unique' },
-  { file: 'misc/stone.png', image: stone, note: 'unique' },
-];
+/** The demo set (src/samples/demo-set.js), also used by "Try with sample photos". */
+export const SAMPLES = demoSamples();
 
 const NOT_AN_IMAGE = { file: 'misc/notes.txt', text: 'This is not an image. DupeLens lists it under "Skipped files".\n' };
 

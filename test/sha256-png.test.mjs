@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { sha256Fallback, sha256Hex, bytesToHex } from '../src/engine/sha256.js';
 import { encodePng, decodePng, crc32 } from '../tools/lib/png.mjs';
-import { renderScene, createRandom } from '../tools/lib/synth.mjs';
+import { renderScene, createRandom } from '../src/samples/synth.js';
 
 const text = (s) => new TextEncoder().encode(s);
 

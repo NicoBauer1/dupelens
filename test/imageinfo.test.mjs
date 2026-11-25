@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readImageInfo, skipReason, decodeFailureReason, fileExtension } from '../src/engine/imageinfo.js';
 import { encodePng } from '../tools/lib/png.mjs';
-import { renderScene } from '../tools/lib/synth.mjs';
+import { renderScene } from '../src/samples/synth.js';
 
 const bytes = (...parts) => {
   const flat = parts.flatMap((p) => (typeof p === 'string' ? [...p].map((c) => c.charCodeAt(0)) : p));

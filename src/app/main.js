@@ -6,7 +6,8 @@ import { AnalysisPool } from './pool.js';
 import { filesFromInput, filesFromDrop } from './loader.js';
 import { ReviewSession, SORT_ORDERS } from './review.js';
 import { CompareView } from './compare.js';
-import { formatBytes, formatDate, plural, formatScore, formatResolution, formatDuration } from './format.js';
+import { createSampleFiles } from './samples.js';
+import { formatBytes, formatDate, plural, formatScore, formatThreshold, formatResolution, formatDuration } from './format.js';
 import { APP_VERSION } from './version.js';
 import { findPairsAsync } from '../engine/matcher.js';
 import { prepareFingerprint, MIN_SCORE } from '../engine/similarity.js';
@@ -15,7 +16,9 @@ import { reportToCsv, reportToJson, pathsToRemove } from '../export/report.js';
 import { powerShellScript, shellScript, describeRunLocation, DEFAULT_REVIEW_FOLDER } from '../export/scripts.js';
 
 const BATCH = 20; // group cards rendered per step
+const BOM = '\ufeff'; // byte order mark for the PowerShell script
 const PRESETS = [100, 95, 90, 80];
+const PRESET_NAMES = { 100: 'Exact', 95: 'Near-identical', 90: 'Default', 80: 'Similar shots' };
 
 const state = {
   /** @type {Array<import('./review.js').Entry & { file: File | null }>} */
@@ -40,11 +43,11 @@ const ui = {};
 function cacheElements() {
   for (const id of [
     'start-view', 'progress-view', 'review-view', 'dropzone', 'folder-input', 'file-input', 'add-input',
-    'folder-button', 'file-button', 'add-button', 'progress-bar', 'progress-text', 'progress-title',
+    'folder-button', 'file-button', 'sample-button', 'add-button', 'progress-bar', 'progress-text', 'progress-title',
     'progress-mode', 'cancel-button', 'threshold', 'threshold-value', 'summary', 'sort-order',
     'export-button', 'restart-button', 'groups', 'groups-sentinel', 'skipped', 'skipped-summary',
     'skipped-list', 'engine-mode', 'app-version', 'announcer', 'theme-toggle', 'help-button',
-    'compare-dialog', 'export-dialog', 'export-body', 'help-dialog', 'main',
+    'compare-dialog', 'export-dialog', 'export-body', 'help-dialog', 'main', 'steps', 'review-hint',
   ]) {
     ui[id.replace(/-(\w)/g, (_, c) => c.toUpperCase())] = byId(id);
   }
@@ -57,6 +60,20 @@ function showView(name) {
   ui.startView.hidden = name !== 'start';
   ui.progressView.hidden = name !== 'progress';
   ui.reviewView.hidden = name !== 'review';
+  setStep(name === 'review' ? 2 : 1);
+}
+
+/**
+ * Marks the current step (1 choose photos, 2 review groups, 3 export).
+ * @param {number} step
+ */
+function setStep(step) {
+  for (const item of ui.steps.querySelectorAll('[data-step]')) {
+    const n = Number(item.getAttribute('data-step'));
+    if (n === step) item.setAttribute('aria-current', 'step');
+    else item.removeAttribute('aria-current');
+    item.classList.toggle('done', n < step);
+  }
 }
 
 function announce(text) {
@@ -140,7 +157,7 @@ async function addFiles(loaded) {
   }
   if (!fresh.length) {
     announce(loaded.length ? 'These files are already loaded.' : 'No files found.');
-    return;
+    return false;
   }
   state.busy = true;
   state.loads++;
@@ -167,7 +184,7 @@ async function addFiles(loaded) {
   } catch (error) {
     ui.progressText.textContent = String(error.message || error);
     state.busy = false;
-    return;
+    return true;
   }
   ui.progressMode.textContent = pool.mode === 'workers'
     ? `Using ${pool.reason} in parallel.`
@@ -224,6 +241,32 @@ async function addFiles(loaded) {
 
   await match();
   state.busy = false;
+  return true;
+}
+
+/** "Try with sample photos": draws the demo set in the browser and analyses it. */
+async function loadSamples() {
+  if (state.busy) return;
+  const previous = state.session ? 'review' : 'start';
+  state.busy = true;
+  showView('progress');
+  ui.progressTitle.textContent = 'Creating sample photos…';
+  ui.progressBar.value = 0;
+  ui.progressText.textContent = 'Drawing the sample photos in this browser…';
+  ui.progressMode.textContent = '';
+  let files;
+  try {
+    files = await createSampleFiles((done, total) => {
+      ui.progressBar.value = done / total;
+    });
+  } catch (error) {
+    state.busy = false;
+    showView(previous);
+    announce(`The sample photos could not be created: ${error.message || error}`);
+    return;
+  }
+  state.busy = false;
+  if (!(await addFiles(files))) showView(previous);
 }
 
 async function match() {
@@ -256,7 +299,7 @@ async function match() {
   showView('review');
   renderAll();
   const s = session.summary();
-  announce(`Analysis finished. ${plural(s.groups, 'group')} of duplicates found at ${formatScore(session.threshold)}.`);
+  announce(`Analysis finished. ${plural(s.groups, 'group')} of duplicates found at ${formatThreshold(session.threshold)}.`);
   ui.main.focus();
 }
 
@@ -273,8 +316,8 @@ function renderAll() {
 function renderThreshold() {
   const t = state.session ? state.session.threshold : Number(ui.threshold.value);
   ui.threshold.value = String(t);
-  ui.thresholdValue.textContent = formatScore(t);
-  ui.threshold.setAttribute('aria-valuetext', `${formatScore(t)}`);
+  ui.thresholdValue.textContent = formatThreshold(t);
+  ui.threshold.setAttribute('aria-valuetext', formatThreshold(t));
   for (const chip of document.querySelectorAll('[data-preset]')) {
     chip.setAttribute('aria-pressed', String(Number(chip.getAttribute('data-preset')) === t));
   }
@@ -295,16 +338,37 @@ function renderSummary() {
 function renderGroups() {
   ui.groups.replaceChildren();
   state.rendered = 0;
+  ui.reviewHint.hidden = state.session.groups.length === 0;
   if (!state.session.groups.length) {
-    ui.groups.append(
-      h('div', { class: 'empty' },
-        h('p', { text: `No duplicates at ${formatScore(state.session.threshold)}.` }),
-        h('p', { class: 'muted', text: 'Lower the threshold or try the "Similar shots" preset to see less similar photos.' }),
-      ),
-    );
+    ui.groups.append(emptyState());
     return;
   }
   renderMore();
+}
+
+/** Shown in step 2 when no group reaches the similarity. */
+function emptyState() {
+  const t = state.session.threshold;
+  const comparable = state.entries.filter((e) => e.status === 'ok' || e.exactOnly).length;
+  const lower = PRESETS.find((p) => p < t) ?? (t > MIN_SCORE ? MIN_SCORE : null);
+  const lowerLabel = lower === null ? '' : PRESET_NAMES[lower] ? `Show ${PRESET_NAMES[lower].toLowerCase()} (${formatThreshold(lower)})` : `Show results at ${formatThreshold(lower)}`;
+  const enough = comparable >= 2;
+  return h('div', { class: 'empty' },
+    h('span', { class: 'empty-icon' }, icon('photos')),
+    h('h3', { text: enough ? `No duplicates at ${formatThreshold(t)}` : 'Not enough photos to compare' }),
+    h('p', { class: 'muted', text: enough
+      ? 'None of the photos are this similar to each other. A lower similarity also finds edited and cropped versions.'
+      : 'DupeLens needs at least two photos it can analyse. Skipped files are listed below.' }),
+    h('div', { class: 'button-row' },
+      enough && lower !== null
+        ? h('button', { type: 'button', class: 'button primary', 'data-action': 'lower', onclick: () => {
+          setThreshold(lower);
+          announceGroups();
+        } }, lowerLabel)
+        : null,
+      h('button', { type: 'button', class: 'button', onclick: () => ui.addInput.click() }, icon('plus'), 'Add photos'),
+    ),
+  );
 }
 
 function renderMore(until = 0) {
@@ -468,6 +532,10 @@ function focusGroup(g) {
   }
 }
 
+function announceGroups() {
+  announce(`Similarity ${formatThreshold(state.session.threshold)}: ${plural(state.session.groups.length, 'group')}.`);
+}
+
 function setThreshold(value) {
   const t = Math.max(MIN_SCORE, Math.min(100, value));
   state.session.setThreshold(t);
@@ -519,22 +587,26 @@ function openExport() {
 
   const body = ui.exportBody;
   body.replaceChildren(
-    h('p', {}, `${plural(s.groups, 'group')}, ${plural(s.toRemove, 'file')} marked for removal (${formatBytes(s.bytes)}). DupeLens itself does not write to your files. When you run a move script with the apply flag, it moves the marked files into a folder called `, h('code', { text: DEFAULT_REVIEW_FOLDER }), ' next to them, keeping their relative paths. Review the script before running it and keep a backup of your photos.'),
+    h('p', { class: 'export-summary' }, `${plural(s.groups, 'group')}, ${plural(s.toRemove, 'photo')} marked for removal (${formatBytes(s.bytes)}).`),
     s.reviewed < s.groups ? h('p', { class: 'callout warning' }, icon('warning'), ` ${plural(s.groups - s.reviewed, 'group')} still use${s.groups - s.reviewed === 1 ? 's' : ''} the automatic suggestion. Their decisions are exported as they are shown.`) : null,
     s.allRemoved ? h('p', { class: 'callout warning' }, icon('warning'), ` In ${plural(s.allRemoved, 'group')} every copy is marked for removal.`) : null,
-    h('h3', { text: 'Decisions' }),
+    h('h3', { text: '1. Save your decisions (optional)' }),
+    h('p', { class: 'hint', text: 'A list of all groups and decisions, for your records or a spreadsheet.' }),
     h('div', { class: 'export-grid' },
       h('button', { type: 'button', class: 'button', onclick: () => downloadText(`dupelens-decisions-${stamp}.json`, reportToJson(report), 'application/json') }, icon('download'), 'Decisions as JSON'),
       h('button', { type: 'button', class: 'button', onclick: () => downloadText(`dupelens-decisions-${stamp}.csv`, reportToCsv(report), 'text/csv') }, icon('download'), 'Decisions as CSV'),
     ),
-    h('h3', { text: 'Move scripts (dry run by default)' }),
-    h('p', { class: 'callout' }, h('strong', { text: 'Where to run them: ' }), location.text),
+    h('h3', { text: '2. Move the photos marked “Remove”' }),
+    h('p', {}, 'DupeLens itself does not write to your files. The move script moves the marked photos into a folder called ', h('code', { text: DEFAULT_REVIEW_FOLDER }), ', keeping their relative paths, but only when you run it with the apply flag; without it, the script only lists what it would do. Review the script before running it and keep a backup of your photos.'),
+    h('p', { class: 'callout' }, h('strong', { text: 'Where to run it: ' }), location.text),
     h('div', { class: 'export-grid' },
-      h('button', { type: 'button', class: 'button', disabled: paths.length === 0, onclick: () => downloadText('dupelens-move.ps1', '﻿' + powerShellScript(paths, scriptOptions), 'text/plain') }, icon('download'), 'PowerShell (Windows)'),
+      h('button', { type: 'button', class: 'button', disabled: paths.length === 0, onclick: () => downloadText('dupelens-move.ps1', BOM + powerShellScript(paths, scriptOptions), 'text/plain') }, icon('download'), 'PowerShell (Windows)'),
       h('button', { type: 'button', class: 'button', disabled: paths.length === 0, onclick: () => downloadText('dupelens-move.sh', shellScript(paths, scriptOptions), 'text/x-shellscript') }, icon('download'), 'Shell script (macOS, Linux)'),
     ),
-    h('p', { class: 'muted' }, 'Windows: ', h('code', { text: 'powershell -ExecutionPolicy Bypass -File .\\dupelens-move.ps1' }), ' shows what would happen; add ', h('code', { text: '-Apply' }), ' to move. macOS/Linux: ', h('code', { text: 'sh dupelens-move.sh' }), ', then ', h('code', { text: 'sh dupelens-move.sh --apply' }), '.'),
+    paths.length === 0 ? h('p', { class: 'hint', text: 'No photo is marked for removal, so there is nothing to move.' }) : null,
+    h('p', { class: 'muted' }, 'Windows: ', h('code', { text: 'powershell -ExecutionPolicy Bypass -File .\\dupelens-move.ps1' }), ' lists what would happen; add ', h('code', { text: '-Apply' }), ' to move. macOS/Linux: ', h('code', { text: 'sh dupelens-move.sh' }), ', then ', h('code', { text: 'sh dupelens-move.sh --apply' }), '.'),
   );
+  setStep(3);
   ui.exportDialog.showModal();
 }
 
@@ -544,6 +616,7 @@ function openExport() {
 function wireEvents() {
   ui.folderButton.addEventListener('click', () => ui.folderInput.click());
   ui.fileButton.addEventListener('click', () => ui.fileInput.click());
+  ui.sampleButton.addEventListener('click', loadSamples);
   ui.addButton.addEventListener('click', () => ui.addInput.click());
   for (const input of [ui.folderInput, ui.fileInput, ui.addInput]) {
     input.addEventListener('change', () => {
@@ -586,7 +659,7 @@ function wireEvents() {
   for (const chip of document.querySelectorAll('[data-preset]')) {
     chip.addEventListener('click', () => {
       setThreshold(Number(chip.getAttribute('data-preset')));
-      announce(`Threshold ${formatScore(state.session.threshold)}: ${plural(state.session.groups.length, 'group')}.`);
+      announceGroups();
     });
   }
   for (const [value, label] of Object.entries(SORT_ORDERS)) ui.sortOrder.append(h('option', { value, text: label }));
@@ -597,6 +670,9 @@ function wireEvents() {
   });
 
   ui.exportButton.addEventListener('click', openExport);
+  ui.exportDialog.addEventListener('close', () => {
+    if (!ui.reviewView.hidden) setStep(2);
+  });
   ui.restartButton.addEventListener('click', () => {
     if (state.busy) return;
     if (state.session && state.session.summary().reviewed > 0 && !confirm('Start over? Your decisions will be lost (files are not touched).')) return;
