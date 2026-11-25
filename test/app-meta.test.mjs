@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { APP_VERSION } from '../src/app/version.js';
 import { CONTENT_SECURITY_POLICY, resolveInside } from '../tools/serve.mjs';
-import { formatBytes, formatScore, formatResolution, formatDuration, plural } from '../src/app/format.js';
+import { formatBytes, formatScore, formatThreshold, formatResolution, formatDuration, plural } from '../src/app/format.js';
 import path from 'node:path';
 
 const root = new URL('../', import.meta.url);
@@ -40,6 +40,8 @@ test('formatting helpers', () => {
   assert.equal(formatBytes(-1), '—');
   assert.equal(formatScore(100), '100 %');
   assert.equal(formatScore(97.25), '97.3 %');
+  assert.equal(formatThreshold(90), '90 %');
+  assert.equal(formatThreshold(92.5), '92.5 %');
   assert.equal(formatResolution(4000, 3000), '4000 × 3000 (12.0 MP)');
   assert.equal(formatResolution(0, 0), '—');
   assert.equal(formatDuration(75), '1 min 15 s');

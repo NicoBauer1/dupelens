@@ -10,12 +10,15 @@
 //   node tools/smoke-browser.mjs --screenshot out.png [--dark]   # start and review screens
 //   BROWSER=/path/to/chrome node tools/smoke-browser.mjs
 //
-// Checks: the page loads without errors or network requests, the folder
-// picker accepts examples/, the analysis finishes (and reports whether
-// workers or the main-thread fallback were used), the expected groups appear,
-// the threshold slider and the keyboard shortcuts work, the compare modes
-// render, and the four exports download — the sh script is then run on a
-// temporary copy of examples/ (dry run, then apply).
+// Checks: the page loads without errors or network requests, the start
+// screen shows the three steps and the "as is" note, "Try with sample photos"
+// draws the demo set and finds its groups, the folder picker accepts
+// examples/, the analysis finishes (and reports whether workers or the
+// main-thread fallback were used), the expected groups appear, the threshold
+// presets and the keyboard shortcuts work, the compare modes render, the four
+// exports download — the sh script is then run on a temporary copy of
+// examples/ (dry run, then apply) — and a folder without duplicates shows the
+// empty state.
 
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -169,6 +172,29 @@ async function main() {
     check(/^v\d+\.\d+\.\d+/.test(await evaluate("document.getElementById('app-version').textContent")), 'version shown in the footer', await evaluate("document.getElementById('app-version').textContent"));
 
     if (screenshot) await capture(screenshot.replace(/\.png$/i, '') + '-start.png');
+    const currentStep = "(document.querySelector('#steps [aria-current=\"step\"]') || {}).textContent?.trim()";
+    const start = await evaluate(`({
+      step: ${currentStep},
+      steps: [...document.querySelectorAll('#steps [data-step]')].map((s) => s.textContent.trim()),
+      note: document.getElementById('disclaimer').textContent,
+      sample: document.getElementById('sample-button').textContent.trim(),
+    })`);
+    check(start.steps.length === 3 && start.step === '1 Choose photos' && /as is/.test(start.note) && /without warranty/.test(start.note) && /sample photos/.test(start.sample),
+      'start screen shows the three steps, the "as is" note and the sample button', `${start.steps.join(' → ')}; current: ${start.step}`);
+
+    // "Try with sample photos": the demo set is drawn in the browser and analysed.
+    await evaluate("document.getElementById('sample-button').click(), true");
+    await waitFor(() => evaluate("!document.getElementById('review-view').hidden"), 90000, 'the review of the sample photos');
+    const demo = await evaluate(`({
+      step: ${currentStep},
+      groups: [...document.querySelectorAll('.group')].map((g) => [...g.querySelectorAll('.facts dd[title]')].map((d) => d.title).sort()),
+    })`);
+    const demoBeach = demo.groups.find((g) => g.includes('sample-photos/holiday/beach-sunset.png'));
+    check(demo.groups.length === 5 && Boolean(demoBeach && demoBeach.length === 4) && demo.step === '2 Review groups',
+      'sample photos: five groups at 90 % and step 2 is current', `${demo.groups.length} groups; current: ${demo.step}`);
+    await evaluate("document.getElementById('restart-button').click(), true");
+    check(await evaluate("!document.getElementById('start-view').hidden"), 'start over returns to step 1');
+
     // Drag and drop is not simulated reliably in headless mode; it is part
     // of the manual smoke test in docs/RELEASING.md.
     const { root } = await send('DOM.getDocument', { depth: 1 });
@@ -230,8 +256,11 @@ async function main() {
     const dialogs = await evaluate(`(async () => {
       document.getElementById('export-button').click();
       const exportOpen = document.getElementById('export-dialog').open;
+      const exportStep = ${currentStep};
       const buttons = [...document.querySelectorAll('#export-body button')].map((b) => b.textContent.trim());
       document.getElementById('export-dialog').close();
+      await new Promise((r) => setTimeout(r, 100));
+      const afterStep = ${currentStep};
       document.querySelector('.group .group-actions button').click();
       await new Promise((r) => setTimeout(r, 300));
       const compareOpen = document.getElementById('compare-dialog').open;
@@ -242,9 +271,10 @@ async function main() {
         modes.push(mode + ':' + document.getElementById('compare-stage').children.length + ':' + (document.querySelector('#compare-stage canvas') ? 'canvas' : ''));
       }
       document.getElementById('compare-dialog').close();
-      return { exportOpen, buttons, compareOpen, modes };
+      return { exportOpen, exportStep, afterStep, buttons, compareOpen, modes };
     })()`);
     check(dialogs.exportOpen && dialogs.buttons.length === 4, 'export dialog offers JSON, CSV, PowerShell and sh', dialogs.buttons.join(' | '));
+    check(dialogs.exportStep === '3 Export' && dialogs.afterStep === '2 Review groups', 'the export dialog is step 3, closing it returns to step 2');
     check(dialogs.compareOpen, 'compare view opens', dialogs.modes.join(' '));
     check(dialogs.modes.some((m) => m.startsWith('difference') && m.endsWith('canvas')), 'difference mode renders a canvas');
 
@@ -301,6 +331,20 @@ async function main() {
       await capture(screenshot.replace(/\.png$/i, '') + '-compare.png');
       await evaluate("document.getElementById('compare-dialog').close()");
     }
+
+    // A folder without duplicates shows the empty state with a way forward.
+    await evaluate("window.confirm = () => true; document.getElementById('restart-button').click(), true");
+    await send('DOM.setFileInputFiles', { nodeId, files: [path.join(ROOT, 'examples', 'misc')] });
+    await waitFor(() => evaluate("!document.getElementById('review-view').hidden && !!document.querySelector('#groups .empty')"), 60000, 'the empty state');
+    const empty = await evaluate(`(() => {
+      const box = document.querySelector('#groups .empty');
+      const lower = box.querySelector('[data-action="lower"]');
+      const text = box.textContent;
+      if (lower) lower.click();
+      return { text, lower: lower ? lower.textContent : '', threshold: document.getElementById('threshold-value').textContent };
+    })()`);
+    check(/No duplicates at 90/.test(empty.text) && /similar shots/i.test(empty.lower) && empty.threshold === '80 %',
+      'a folder without duplicates shows the empty state, which offers a lower similarity', `${empty.lower} → ${empty.threshold}`);
 
     const external = requests.filter((url) => !/^(data|blob|file|about|chrome|devtools):/.test(url) && !(option('--url') && url.startsWith(option('--url'))));
     check(external.length === 0, 'no network requests', external.join(', '));

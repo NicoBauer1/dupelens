@@ -5,7 +5,7 @@ import { groupPairs, DisjointSet, indexPairs, pairKey } from '../src/engine/grou
 import { suggestKeeper, compareKeepers, keeperReason } from '../src/engine/keeper.js';
 import { compareFingerprints, MIN_SCORE } from '../src/engine/similarity.js';
 import { analyse } from '../tools/lib/calibration.mjs';
-import * as synth from '../tools/lib/synth.mjs';
+import * as synth from '../src/samples/synth.js';
 
 const a = synth.renderScene('landscape', 41);
 const b = synth.renderScene('city', 42);

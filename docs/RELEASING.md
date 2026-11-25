@@ -59,6 +59,8 @@ if available:
 
 - [ ] `dist/dupelens.html` opens by double-click (`file://`) without console
       errors and shows the version in the footer.
+- [ ] **Try with sample photos** finds the groups listed in
+      `examples/README.md`.
 - [ ] Loading the `examples/` folder via the folder picker and via drag and drop
       finds the expected groups.
 - [ ] Moving the threshold slider regroups instantly.

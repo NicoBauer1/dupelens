@@ -3,7 +3,7 @@
 // scene type; the score between original and transformed copy is collected.
 // Unrelated pairs are all pairs of distinct originals.
 
-import * as synth from './synth.mjs';
+import * as synth from '../../src/samples/synth.js';
 import { computeFingerprint } from '../../src/engine/fingerprint.js';
 import { prepareFingerprint, compareFingerprints } from '../../src/engine/similarity.js';
 
